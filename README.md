@@ -88,7 +88,7 @@ Open **http://localhost:8790**.
 1. **Settings → Models → Add** custom OpenAI-compatible provider
 2. Base URL `https://api.groq.com/openai/v1` + Groq API key
 3. Model id `openai/gpt-oss-120b`
-4. Set `UNDOX_MODEL` in `.env` (e.g. `custom/openai/gpt-oss-120b` — use the FQN shown in the selector)
+4. Set `UNDOX_MODEL` in `.env` (e.g. `custom/openai/gpt-oss-120b` — use the FQN shown in the selector). Scripts load `.env` via Node `--env-file=.env`.
 
 ### 4. Register the Undox MCP connector
 

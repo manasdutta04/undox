@@ -13,7 +13,7 @@ import { ORCHESTRATOR_NAME, registerOrchestrator } from "./orchestrator.js";
 
 async function main() {
   const baseUrl = process.env.TRUEFORGE_BASE_URL ?? "http://localhost:8790";
-  const model = process.env.UNDOX_MODEL ?? "openai/gpt-4.1";
+  const model = process.env.UNDOX_MODEL ?? "custom/openai/gpt-oss-120b";
   const token = process.env.TRUEFORGE_TOKEN;
 
   const client = new TrueForge({

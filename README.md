@@ -47,10 +47,10 @@ Add a **custom** OpenAI-compatible provider:
 | Type | `custom` (OpenAI-compatible) |
 | Base URL | `https://api.groq.com/openai/v1` |
 | API key | from [console.groq.com](https://console.groq.com) (free) |
-| Model id | `llama-3.3-70b-versatile` or `llama-3.1-8b-instant` |
+| Model id | `openai/gpt-oss-120b` (preferred) or `openai/gpt-oss-20b` (faster / lighter) |
 
 ```bash
-UNDOX_MODEL=custom/llama-3.3-70b-versatile
+UNDOX_MODEL=custom/openai/gpt-oss-120b
 ```
 
 (Use the exact FQN shown in the TrueForge model selector after you save the provider.)
@@ -87,8 +87,8 @@ Open **http://localhost:8790**.
 
 1. **Settings → Models → Add** custom OpenAI-compatible provider
 2. Base URL `https://api.groq.com/openai/v1` + Groq API key
-3. Model `llama-3.3-70b-versatile`
-4. Set `UNDOX_MODEL` in `.env`
+3. Model id `openai/gpt-oss-120b`
+4. Set `UNDOX_MODEL` in `.env` (e.g. `custom/openai/gpt-oss-120b` — use the FQN shown in the selector)
 
 ### 4. Register the Undox MCP connector
 
@@ -156,3 +156,9 @@ Qodo-reviewed PR merges, fill this in:
 - **Review trail:** the PR conversation must show the completed Qodo review, our decisions, and a follow-up review on the final code
 
 Until then: install Qodo on this repo and open the next change as a PR (not a direct `main` push). See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+
+## AI assistance disclosure
+
+This project was built with AI coding assistants (Cursor) during the hackathon.
+Architecture, broker choice, approval-gate design, and all merges are owned and
+verified by the team (hackathon rules 12–14).

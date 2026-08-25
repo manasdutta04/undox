@@ -8,10 +8,10 @@
     "node": ">=22.14.0"
   },
   "scripts": {
-    "mcp:undox-tools": "tsx src/mcp/undox-tools/server.ts",
-    "sandbox:spokeo-prepare": "tsx src/sandbox/spokeo-prepare-optout.ts",
-    "register:agent": "tsx src/agents/register-orchestrator.ts",
-    "demo:approval-gate": "tsx scripts/demo-approval-gate.ts",
+    "mcp:undox-tools": "node --env-file=.env --import tsx src/mcp/undox-tools/server.ts",
+    "sandbox:spokeo-prepare": "node --env-file=.env --import tsx src/sandbox/spokeo-prepare-optout.ts",
+    "register:agent": "node --env-file=.env --import tsx src/agents/register-orchestrator.ts",
+    "demo:approval-gate": "node --env-file=.env --import tsx scripts/demo-approval-gate.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts"
   },

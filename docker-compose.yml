@@ -1,0 +1,19 @@
+# Undox does not vendor TrueForge. PR1 runs against local mode:
+#   npx @truefoundry/trueforge@latest
+#
+# This Compose file is a no-op placeholder so the section-5 path exists.
+# Enable the docs-only profile only if you want a reminder container:
+#   docker compose --profile docs-only up
+services:
+  trueforge-local-reminder:
+    image: node:22-alpine
+    profiles: ["docs-only"]
+    working_dir: /undox
+    volumes:
+      - ./:/undox
+    command:
+      [
+        "sh",
+        "-c",
+        "echo Use npx @truefoundry/trueforge@latest on the host && sleep infinity",
+      ]

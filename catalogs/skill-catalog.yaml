@@ -1,0 +1,16 @@
+# Discovery catalog for TrueForge Settings → Skills.
+# Usage: SKILL_CATALOG_PATH=./catalogs/skill-catalog.yaml npx @truefoundry/trueforge
+# Replace REPLACE_ME/undox with your GitHub fork once published.
+skills:
+  - type: git
+    name: spokeo
+    url: https://github.com/REPLACE_ME/undox
+    path: skills/brokers/spokeo
+    ref: main
+    description: Opt out of Spokeo people-search listings with human-approved submission.
+  - type: git
+    name: exposure-score
+    url: https://github.com/REPLACE_ME/undox
+    path: skills/reporting/exposure-score
+    ref: main
+    description: Compute Undox exposure / risk score from broker listings.

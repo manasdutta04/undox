@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.undox-session-state.json
+*.log
+.DS_Store
+.trueforge/
+*.sqlite
+
+# Local agent / hackathon context — never publish
+.local/
+UNDOX_PROJECT_CONTEXT.md
+context.txt
+**/context.txt

@@ -148,14 +148,10 @@ npm run demo:approval-gate
 
 ## Qodo Code Review Evidence
 
-Required for every submission (Best Code Quality track). After the first
-Qodo-reviewed PR merges, fill this in:
-
-- **Representative PR:** _link to a merged PR with meaningful Undox code_
-- **What Qodo found / what we did:** _1–2 sentences — fixed High findings, or dismissed with reason_
-- **Review trail:** the PR conversation must show the completed Qodo review, our decisions, and a follow-up review on the final code
-
-Until then: install Qodo on this repo and open the next change as a PR (not a direct `main` push). See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+- **Representative PR:** https://github.com/manasdutta04/undox/pull/1  
+  (`docs: use Groq openai/gpt-oss-120b as default model`)
+- **What Qodo found / what we did:** Qodo flagged a Medium correctness bug — `UNDOX_MODEL` in `.env` was ignored because scripts ran `tsx` without loading the env file. We switched npm scripts to `node --env-file=.env --import tsx`, replied on the finding thread, and re-ran `/agentic_review`; Qodo marked the finding **Resolved**.
+- **Review trail:** initial `/agentic_review` → finding + fix commit → thread reply → follow-up review against `490e8e1` → squash merge to `main`.
 
 ## AI assistance disclosure
 

@@ -1,12 +1,15 @@
 ---
 name: exposure-score
-description: Compute a simple Undox exposure / risk score from live broker listings and field sensitivity. Placeholder until the Generative UI dashboard (PR4).
+description: Build Undox exposure / risk dashboard from session broker statuses. Call get_exposure_dashboard after finds and submits; render Generative UI cards.
 ---
 
-# Exposure score (placeholder)
+# Exposure score / dashboard
 
-PR1 does not render the dashboard yet. When implemented:
+1. After broker work, call MCP `get_exposure_dashboard(session_id)`.
+2. Render Generative UI (or a clear markdown table) with:
+   - `riskLabel` + `riskScore`
+   - Per-broker status (`found` / `prepared` / `submitted` / …)
+   - Short `timeline`
+3. On session resume, call again and compare — statuses must persist.
 
-- Weight address and phone higher than name-only exposure.
-- Score = sum over live listings of field weights.
-- Surface on the Generative UI exposure map.
+Scoring (fixture heuristic in `src/agents/exposure-dashboard.ts`): open listings weigh more than count alone; labels are low / medium / high.

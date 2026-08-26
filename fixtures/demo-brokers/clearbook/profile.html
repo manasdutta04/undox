@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Clearbook profile (fixture)</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; background: #0f1419; color: #e7ecf1; }
+    .badge { background: #3d8bfd; color: #041018; padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <p class="badge">FIXTURE PROFILE</p>
+  <h1 id="name">Alex Rivera</h1>
+  <p>Austin, TX · Clearbook demo listing</p>
+  <p><a href="optout.html" style="color:#7ec8ff">Suppress this record</a></p>
+  <script>
+    const q = new URLSearchParams(location.search).get("q");
+    if (q) document.getElementById("name").textContent = q;
+  </script>
+</body>
+</html>

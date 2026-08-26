@@ -1,10 +1,48 @@
-# Demo script (draft — polish in PR8)
+# Undox demo script (3 minutes) — Double-O / Savile Row
 
-Aim ~3 minutes. For PR1, demonstrate beats 1–3 only:
+Narrate **harness beats**, not product fluff. Use **fixture identity only** (never real PII on camera).
 
-1. **Hook:** "Google yourself — your address may already be on a people-search site."
-2. **Core loop:** Start `undox-orchestrator` on demo PII; show find → prepare.
-3. **Approval gate (most important):** Pause on `submit_opt_out`; show exact name / address / phone / DOB; Approve; note mock submit.
-4. *(Later)* Kill/restart TrueForge — session resumes.
-5. *(Later)* Generative UI dashboard.
-6. *(Later)* Real vs fixture mode distinction + PR history / Qodo.
+## Prep (before recording)
+
+1. Ollama up with a tool-calling model (`gemma4:e2b` recommended).
+2. TrueForge in WSL: `npx @truefoundry/trueforge --port 8790`
+3. Windows terminals:
+   - `npm run fixtures:serve` → `http://127.0.0.1:8792/`
+   - `UNDOX_MCP_HOST=0.0.0.0 UNDOX_MCP_TOKEN=… npm run mcp:undox-tools:http`
+4. Connector `undox-tool` → Windows host IP `:8791/mcp`
+5. Import skills: `spokeo`, `peoplefind`, `clearbook`, `exposure-score`
+6. `UNDOX_ATTACH_SKILLS=true UNDOX_MODEL=ollama/gemma4-e2b npm run register:agent`
+7. Note a session id you will reuse: e.g. `demo-double-o-1`
+
+## Beat map
+
+| Time | Say | Show |
+|---|---|---|
+| 0:00–0:20 | Privacy exposure is a real job people pay for. Undox is a TrueForge agent that finds broker listings and opts out — with human approval. | Repo + TrueForge UI |
+| 0:20–0:50 | **Subagents:** orchestrator fans out across Spokeo + two fixture brokers. | Tool / subagent spans for search + brokers |
+| 0:50–1:20 | **Sandbox:** prepare runs as a sandbox script (`run_sandbox_prepare`), not a silent server stub. | MCP log / tool result `prepare_runtime: sandbox-script` |
+| 1:20–1:50 | **Approval:** pause on the exact PII payload. Read name/address/phone/DOB aloud. Allow. | TrueForge approval modal |
+| 1:50–2:20 | **Session resume:** kill TrueForge process, restart, reopen the **same** session id. | Statuses still found/prepared/submitted via `get_session_state` |
+| 2:20–2:45 | **UI:** exposure dashboard — risk score + per-broker cards. | Generative UI or printed dashboard JSON |
+| 2:45–3:00 | Fixture vs live; Qodo PR trail. Clone from README in &lt;15 minutes. | README Qodo evidence |
+
+## Kill / restart resume (mandatory)
+
+1. After at least one broker is `submitted`, note `session_id`.
+2. Stop TrueForge (Ctrl+C). Confirm MCP + fixtures still running (session store is on disk: `.undox-session-state.json`).
+3. Restart TrueForge; open the same chat/session if UI restores it, or start a new turn with:  
+   `Resume session demo-double-o-1 — call get_session_state and get_exposure_dashboard.`
+4. Screen-capture statuses intact.
+
+## Offline dry-run (no LLM)
+
+```bash
+npm run demo:approval-gate
+npm run demo:multi-broker
+```
+
+## Do not film
+
+- Live Spokeo CAPTCHA bypass
+- Real personal data
+- API keys or `.env` contents

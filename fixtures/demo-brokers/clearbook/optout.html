@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Clearbook opt-out (fixture)</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; background: #0f1419; color: #e7ecf1; }
+    label { display: block; margin-top: 0.75rem; }
+    input { width: 100%; padding: 0.4rem; background: #1a222c; border: 1px solid #334; color: #e7ecf1; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; }
+    .badge { background: #3d8bfd; color: #041018; padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <p class="badge">FIXTURE OPT-OUT — Undox mocks the POST</p>
+  <h1>Suppress record</h1>
+  <form onsubmit="event.preventDefault(); document.getElementById('ok').hidden=false;">
+    <label>Profile URL <input name="profile" required /></label>
+    <label>Email <input name="email" type="email" required /></label>
+    <label>Name <input name="name" required /></label>
+    <button type="submit">Request suppression</button>
+  </form>
+  <p id="ok" hidden>Fixture accepted. Real Undox flow uses approval-gated mock submit.</p>
+</body>
+</html>

@@ -3,7 +3,7 @@
  * The approval gate must surface the full PiiPayload before any submit.
  */
 
-export type BrokerId = "spokeo";
+export type BrokerId = "spokeo" | "peoplefind" | "clearbook";
 
 export type ListingStatus =
   | "found"
@@ -41,6 +41,8 @@ export interface OptOutSubmission {
   formFields: Record<string, string>;
   mode: "mock" | "live";
   preparedAt: string;
+  /** Where prepare code ran (demo narration for Double-O sandbox beat). */
+  prepareRuntime?: "mcp-inline" | "sandbox-script";
 }
 
 export interface SessionBrokerState {
@@ -57,4 +59,17 @@ export interface UndoxSessionState {
   person: PiiPayload;
   brokers: SessionBrokerState[];
   timeline: Array<{ at: string; event: string; detail?: string }>;
+}
+
+export interface ExposureDashboard {
+  sessionId: string;
+  riskScore: number;
+  riskLabel: "low" | "medium" | "high";
+  brokers: Array<{
+    broker: BrokerId;
+    status: ListingStatus;
+    profileUrl?: string;
+  }>;
+  timeline: UndoxSessionState["timeline"];
+  summary: string;
 }

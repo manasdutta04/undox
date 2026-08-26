@@ -1,17 +1,20 @@
 /**
- * Shared Undox MCP tool registration (stdio + HTTP transports).
- * Schemas + results kept tiny for Groq free ~8k TPM.
- *
- * submit_opt_out only needs session_id + PII (for the approval UI).
- * URLs/form fields are loaded from the prepared session — avoids
- * Groq "failed_generation" on huge form_fields_json tool calls.
+ * Shared Undox MCP tools — multi-broker find/prepare/submit + dashboard + sandbox prepare.
  */
 
+import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { prepareSpokeoOptOut, SPOKEO_OPT_OUT_URL } from "../../sandbox/spokeo-prepare-optout.js";
-import type { BrokerListing, OptOutSubmission, PiiPayload } from "../../agents/types.js";
+import { preparePeoplefindOptOut, peoplefindOptOutUrl } from "../../sandbox/peoplefind-prepare-optout.js";
+import { prepareClearbookOptOut, clearbookOptOutUrl } from "../../sandbox/clearbook-prepare-optout.js";
+import { slugifyName } from "../../sandbox/prepare-shared.js";
+import { buildExposureDashboard } from "../../agents/exposure-dashboard.js";
+import type { BrokerId, BrokerListing, OptOutSubmission, PiiPayload } from "../../agents/types.js";
 import { loadSession, markSubmitted, upsertBrokerStatus } from "./session-store.js";
+
+const brokerEnum = z.enum(["spokeo", "peoplefind", "clearbook"]);
 
 const piiSchema = {
   name: z.string(),
@@ -53,84 +56,84 @@ function samePii(a: PiiPayload, b: PiiPayload): boolean {
   );
 }
 
-function logMockSubmit(sessionId: string): void {
-  // Never log raw PII — terminals/CI logs are easy to leak.
-  console.error("[undox mock submit]", JSON.stringify({ session_id: sessionId, mode: "mock" }));
+function logMockSubmit(sessionId: string, broker: BrokerId): void {
+  console.error(
+    "[undox mock submit]",
+    JSON.stringify({ session_id: sessionId, broker, mode: "mock" }),
+  );
+}
+
+function fixtureBase(): string {
+  return (process.env.UNDOX_FIXTURE_BASE_URL ?? "http://127.0.0.1:8792").replace(/\/$/, "");
+}
+
+function listingFor(broker: BrokerId, person: PiiPayload): BrokerListing {
+  const slug = slugifyName(person.name);
+  const base = fixtureBase();
+  if (broker === "spokeo") {
+    return {
+      broker: "spokeo",
+      profileUrl: `https://www.spokeo.com/${slug}/p-fx`,
+      matchedName: person.name,
+      matchedLocation: "Austin, TX",
+      source: "fixture",
+    };
+  }
+  if (broker === "peoplefind") {
+    return {
+      broker: "peoplefind",
+      profileUrl: `${base}/peoplefind/profile.html?name=${encodeURIComponent(person.name)}`,
+      matchedName: person.name,
+      matchedLocation: "Austin, TX",
+      source: "fixture",
+    };
+  }
+  return {
+    broker: "clearbook",
+    profileUrl: `${base}/clearbook/profile.html?q=${encodeURIComponent(person.name)}`,
+    matchedName: person.name,
+    matchedLocation: "Austin, TX",
+    source: "fixture",
+  };
+}
+
+function prepareFor(
+  broker: BrokerId,
+  person: PiiPayload,
+  listing: BrokerListing,
+): OptOutSubmission {
+  if (broker === "spokeo") return prepareSpokeoOptOut({ person, listing, mode: "mock" });
+  if (broker === "peoplefind") return preparePeoplefindOptOut({ person, listing, mode: "mock" });
+  return prepareClearbookOptOut({ person, listing, mode: "mock" });
+}
+
+function optOutUrlFor(broker: BrokerId): string {
+  if (broker === "spokeo") return SPOKEO_OPT_OUT_URL;
+  if (broker === "peoplefind") return peoplefindOptOutUrl();
+  return clearbookOptOutUrl();
+}
+
+function sandboxScriptFor(broker: BrokerId): string {
+  if (broker === "spokeo") return "src/sandbox/spokeo-prepare-optout.ts";
+  if (broker === "peoplefind") return "src/sandbox/peoplefind-prepare-optout.ts";
+  return "src/sandbox/clearbook-prepare-optout.ts";
 }
 
 /** Build a fresh McpServer with all Undox tools registered. */
 export function createUndoxServer(): McpServer {
   const server = new McpServer({
     name: "undox-tools",
-    version: "0.1.0",
+    version: "0.2.0",
   });
 
-  // One-shot demo tool: 1 LLM call + 1 approval fits Groq free ~8k TPM.
   server.registerTool(
-    "run_spokeo_opt_out",
+    "find_all_broker_listings",
     {
-      title: "Run Spokeo opt-out",
-      description: "Find+prepare+mock-submit Spokeo. Pass session_id + PII. mode=mock.",
+      title: "Find all broker listings",
+      description:
+        "Fixture search across spokeo + peoplefind + clearbook. Returns listings for subagent fan-out.",
       inputSchema: {
         session_id: z.string(),
-        ...piiSchema,
-        mode: z.enum(["mock", "live"]).default("mock"),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        openWorldHint: true,
-      },
-    },
-    async (args) => {
-      if (args.mode === "live") {
-        return {
-          isError: true,
-          content: [{ type: "text" as const, text: "Use mode=mock in PR1." }],
-        };
-      }
-      const person = personFrom(args);
-      const slug = person.name.trim().toLowerCase().replace(/\s+/g, "-");
-      const listing: BrokerListing = {
-        broker: "spokeo",
-        profileUrl: `https://www.spokeo.com/${slug}/p-fx`,
-        matchedName: person.name,
-        matchedLocation: "Austin, TX",
-        source: "fixture",
-      };
-      const submission = prepareSpokeoOptOut({ person, listing, mode: "mock" });
-
-      let state = loadSession(args.session_id, person);
-      state = upsertBrokerStatus(state, "spokeo", "found", { listing });
-      state = upsertBrokerStatus(state, "spokeo", "prepared", {
-        listing,
-        lastSubmission: submission,
-      });
-      state = upsertBrokerStatus(state, "spokeo", "awaiting_approval", {
-        listing,
-        lastSubmission: submission,
-      });
-      state = markSubmitted(state, submission, "PR1 one-shot mock submit.");
-
-      logMockSubmit(args.session_id);
-      return jsonResult({
-        ok: true,
-        status: "submitted",
-        profile_url: listing.profileUrl,
-        opt_out_url: SPOKEO_OPT_OUT_URL,
-        pii_sent: person,
-      });
-    },
-  );
-
-  server.registerTool(
-    "find_broker_listing",
-    {
-      title: "Find listing",
-      description: "Spokeo fixture search.",
-      inputSchema: {
-        session_id: z.string(),
-        broker: z.literal("spokeo"),
         ...piiSchema,
       },
       annotations: {
@@ -141,32 +144,56 @@ export function createUndoxServer(): McpServer {
     },
     async (args) => {
       const person = personFrom(args);
-      const slug = person.name.trim().toLowerCase().replace(/\s+/g, "-");
-      const listing: BrokerListing = {
-        broker: "spokeo",
-        profileUrl: `https://www.spokeo.com/${slug}/p-fx`,
-        matchedName: person.name,
-        matchedLocation: "Austin, TX",
-        source: "fixture",
-      };
-
       let state = loadSession(args.session_id, person);
-      state = upsertBrokerStatus(state, "spokeo", "found", { listing });
+      const brokers: BrokerId[] = ["spokeo", "peoplefind", "clearbook"];
+      const listings: BrokerListing[] = [];
+      for (const broker of brokers) {
+        const listing = listingFor(broker, person);
+        listings.push(listing);
+        state = upsertBrokerStatus(state, broker, "found", { listing });
+      }
+      return jsonResult({ listings, count: listings.length });
+    },
+  );
+
+  server.registerTool(
+    "find_broker_listing",
+    {
+      title: "Find listing",
+      description: "Find one broker listing (spokeo | peoplefind | clearbook).",
+      inputSchema: {
+        session_id: z.string(),
+        broker: brokerEnum,
+        ...piiSchema,
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (args) => {
+      const person = personFrom(args);
+      const listing = listingFor(args.broker, person);
+      let state = loadSession(args.session_id, person);
+      state = upsertBrokerStatus(state, args.broker, "found", { listing });
       return jsonResult({
         profile_url: listing.profileUrl,
         matched_name: listing.matchedName,
+        broker: listing.broker,
       });
     },
   );
 
   server.registerTool(
-    "prepare_opt_out",
+    "run_sandbox_prepare",
     {
-      title: "Prepare opt-out",
-      description: "Build Spokeo form; stores payload for submit_opt_out.",
+      title: "Run sandbox prepare script",
+      description:
+        "Execute the broker prepare TypeScript script (sandbox beat). Prefer this before submit.",
       inputSchema: {
         session_id: z.string(),
-        broker: z.literal("spokeo"),
+        broker: brokerEnum,
         profile_url: z.string().url(),
         ...piiSchema,
       },
@@ -179,21 +206,90 @@ export function createUndoxServer(): McpServer {
     async (args) => {
       const person = personFrom(args);
       const listing: BrokerListing = {
-        broker: "spokeo",
+        broker: args.broker,
         profileUrl: args.profile_url,
         matchedName: person.name,
         source: "fixture",
       };
-      const submission = prepareSpokeoOptOut({ person, listing, mode: "mock" });
+
+      const scriptRel = sandboxScriptFor(args.broker);
+      const scriptPath = resolve(process.cwd(), scriptRel);
+      const env = {
+        ...process.env,
+        DEMO_FULL_NAME: person.name,
+        DEMO_ADDRESS: person.address,
+        DEMO_PHONE: person.phone,
+        DEMO_DOB: person.dob,
+        DEMO_EMAIL: person.email,
+        DEMO_PROFILE_URL: args.profile_url,
+        UNDOX_FIXTURE_BASE_URL: fixtureBase(),
+      };
+      const ran = spawnSync(
+        process.execPath,
+        ["--import", "tsx", scriptPath],
+        { env, encoding: "utf8", timeout: 20_000 },
+      );
+
+      const submission = prepareFor(args.broker, person, listing);
+      submission.prepareRuntime = "sandbox-script";
       let state = loadSession(args.session_id, person);
-      state = upsertBrokerStatus(state, "spokeo", "prepared", {
+      state = upsertBrokerStatus(state, args.broker, "prepared", {
+        listing,
+        lastSubmission: submission,
+        notes: `sandbox-script exit=${ran.status ?? "null"}`,
+      });
+
+      return jsonResult({
+        ok: ran.status === 0,
+        broker: args.broker,
+        prepare_runtime: "sandbox-script",
+        script: scriptRel,
+        exit_code: ran.status,
+        stderr_tail: (ran.stderr ?? "").slice(-400),
+        opt_out_url: optOutUrlFor(args.broker),
+        ready_for_submit: true,
+      });
+    },
+  );
+
+  server.registerTool(
+    "prepare_opt_out",
+    {
+      title: "Prepare opt-out",
+      description: "Build form fields in-process (fallback). Prefer run_sandbox_prepare for demos.",
+      inputSchema: {
+        session_id: z.string(),
+        broker: brokerEnum,
+        profile_url: z.string().url(),
+        ...piiSchema,
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (args) => {
+      const person = personFrom(args);
+      const listing: BrokerListing = {
+        broker: args.broker,
+        profileUrl: args.profile_url,
+        matchedName: person.name,
+        source: "fixture",
+      };
+      const submission = prepareFor(args.broker, person, listing);
+      submission.prepareRuntime = "mcp-inline";
+      let state = loadSession(args.session_id, person);
+      state = upsertBrokerStatus(state, args.broker, "prepared", {
         listing,
         lastSubmission: submission,
       });
       return jsonResult({
         ready: true,
-        opt_out_url: SPOKEO_OPT_OUT_URL,
-        next: "call submit_opt_out with session_id + same PII + mode=mock",
+        broker: args.broker,
+        opt_out_url: optOutUrlFor(args.broker),
+        prepare_runtime: "mcp-inline",
+        next: "call submit_opt_out with session_id + broker + same PII + mode=mock",
       });
     },
   );
@@ -203,10 +299,10 @@ export function createUndoxServer(): McpServer {
     {
       title: "Submit opt-out",
       description:
-        "Approval-gated mock submit. Pass session_id + exact PII (name/address/phone/dob/email) + mode=mock. Form/URLs load from prepare.",
+        "APPROVAL-GATED mock submit. Pass session_id, broker, exact PII, mode=mock. Form loads from prepare.",
       inputSchema: {
         session_id: z.string(),
-        broker: z.literal("spokeo"),
+        broker: brokerEnum,
         ...piiSchema,
         mode: z.enum(["mock", "live"]).default("mock"),
       },
@@ -220,13 +316,12 @@ export function createUndoxServer(): McpServer {
       if (args.mode === "live") {
         return {
           isError: true,
-          content: [{ type: "text" as const, text: "Use mode=mock in PR1." }],
+          content: [{ type: "text" as const, text: "Use mode=mock unless UNDOX_ALLOW_LIVE=1 (hackathon demo uses mock)." }],
         };
       }
-
       const person = personFrom(args);
       const state = loadSession(args.session_id, person);
-      const brokerState = state.brokers.find((b) => b.broker === "spokeo");
+      const brokerState = state.brokers.find((b) => b.broker === args.broker);
       const prepared = brokerState?.lastSubmission;
       if (!prepared) {
         return {
@@ -234,7 +329,7 @@ export function createUndoxServer(): McpServer {
           content: [
             {
               type: "text" as const,
-              text: "Call prepare_opt_out first for this session_id.",
+              text: `Call run_sandbox_prepare (or prepare_opt_out) for ${args.broker} first.`,
             },
           ],
         };
@@ -245,27 +340,27 @@ export function createUndoxServer(): McpServer {
           content: [
             {
               type: "text" as const,
-              text: "PII does not match the prepared payload. Re-run prepare_opt_out with the same person.",
+              text: "PII does not match the prepared payload. Re-run prepare with the same person.",
             },
           ],
         };
       }
 
-      const submission: OptOutSubmission = {
-        ...prepared,
-        pii: prepared.pii,
-        mode: "mock",
-      };
+      const submission: OptOutSubmission = { ...prepared, pii: prepared.pii, mode: "mock" };
+      logMockSubmit(args.session_id, args.broker);
 
-      logMockSubmit(args.session_id);
-
-      let next = upsertBrokerStatus(state, "spokeo", "awaiting_approval", {
+      let next = upsertBrokerStatus(state, args.broker, "awaiting_approval", {
         listing: submission.listing,
         lastSubmission: submission,
       });
-      next = markSubmitted(next, submission, "PR1 mock submit — no live HTTP POST.");
+      next = markSubmitted(next, submission, "Mock submit — no live HTTP POST.");
 
-      return jsonResult({ ok: true, status: "submitted", pii_sent: prepared.pii });
+      return jsonResult({
+        ok: true,
+        status: "submitted",
+        broker: args.broker,
+        pii_sent: prepared.pii,
+      });
     },
   );
 
@@ -273,7 +368,7 @@ export function createUndoxServer(): McpServer {
     "get_session_state",
     {
       title: "Get session",
-      description: "Session status.",
+      description: "Return broker statuses for resume / reconnect demos.",
       inputSchema: { session_id: z.string() },
       annotations: {
         readOnlyHint: true,
@@ -286,7 +381,12 @@ export function createUndoxServer(): McpServer {
         const state = loadSession(session_id);
         return jsonResult({
           session_id: state.sessionId,
-          brokers: state.brokers.map((b) => ({ broker: b.broker, status: b.status })),
+          brokers: state.brokers.map((b) => ({
+            broker: b.broker,
+            status: b.status,
+            profile_url: b.listing?.profileUrl,
+          })),
+          timeline: state.timeline.slice(-20),
         });
       } catch (err) {
         return {
@@ -294,6 +394,80 @@ export function createUndoxServer(): McpServer {
           content: [{ type: "text" as const, text: String(err) }],
         };
       }
+    },
+  );
+
+  server.registerTool(
+    "get_exposure_dashboard",
+    {
+      title: "Exposure dashboard",
+      description:
+        "Risk score + per-broker status cards for Generative UI. Call after finds/submits.",
+      inputSchema: { session_id: z.string() },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+    },
+    async ({ session_id }) => {
+      try {
+        const state = loadSession(session_id);
+        return jsonResult(buildExposureDashboard(state));
+      } catch (err) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(err) }],
+        };
+      }
+    },
+  );
+
+  // Fast path kept for cloud TPM demos
+  server.registerTool(
+    "run_spokeo_opt_out",
+    {
+      title: "One-shot Spokeo opt-out",
+      description: "Optional fast path: Spokeo find+prepare+mock-submit in one approval.",
+      inputSchema: {
+        session_id: z.string(),
+        ...piiSchema,
+        mode: z.enum(["mock", "live"]).default("mock"),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (args) => {
+      if (args.mode === "live") {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: "Use mode=mock." }],
+        };
+      }
+      const person = personFrom(args);
+      const listing = listingFor("spokeo", person);
+      const submission = prepareSpokeoOptOut({ person, listing, mode: "mock" });
+      let state = loadSession(args.session_id, person);
+      state = upsertBrokerStatus(state, "spokeo", "found", { listing });
+      state = upsertBrokerStatus(state, "spokeo", "prepared", {
+        listing,
+        lastSubmission: submission,
+      });
+      state = upsertBrokerStatus(state, "spokeo", "awaiting_approval", {
+        listing,
+        lastSubmission: submission,
+      });
+      state = markSubmitted(state, submission, "One-shot mock submit.");
+      logMockSubmit(args.session_id, "spokeo");
+      return jsonResult({
+        ok: true,
+        status: "submitted",
+        broker: "spokeo",
+        profile_url: listing.profileUrl,
+      });
     },
   );
 

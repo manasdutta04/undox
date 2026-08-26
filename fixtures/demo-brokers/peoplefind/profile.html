@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>PeopleFind profile (fixture)</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; background: #f7f3ea; }
+    .badge { background: #c45c26; color: #fff; padding: 0.2rem 0.5rem; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+  <p class="badge">FIXTURE PROFILE</p>
+  <h1 id="name">Alex Rivera</h1>
+  <p>Austin, TX · Demo listing for Undox hackathon</p>
+  <p><a href="optout.html">Request removal</a></p>
+  <script>
+    const q = new URLSearchParams(location.search).get("name");
+    if (q) document.getElementById("name").textContent = q;
+  </script>
+</body>
+</html>

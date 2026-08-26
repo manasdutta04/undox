@@ -230,17 +230,40 @@ export function createUndoxServer(): McpServer {
         { env, encoding: "utf8", timeout: 20_000 },
       );
 
+      if (ran.error || ran.status !== 0) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                ok: false,
+                broker: args.broker,
+                prepare_runtime: "sandbox-script",
+                script: scriptRel,
+                exit_code: ran.status,
+                error: ran.error?.message,
+                stderr_tail: (ran.stderr ?? "").slice(-400),
+                ready_for_submit: false,
+                message:
+                  "Sandbox prepare script failed; broker was not marked prepared. Fix the script and retry.",
+              }),
+            },
+          ],
+        };
+      }
+
       const submission = prepareFor(args.broker, person, listing);
       submission.prepareRuntime = "sandbox-script";
       let state = loadSession(args.session_id, person);
       state = upsertBrokerStatus(state, args.broker, "prepared", {
         listing,
         lastSubmission: submission,
-        notes: `sandbox-script exit=${ran.status ?? "null"}`,
+        notes: `sandbox-script exit=${ran.status}`,
       });
 
       return jsonResult({
-        ok: ran.status === 0,
+        ok: true,
         broker: args.broker,
         prepare_runtime: "sandbox-script",
         script: scriptRel,

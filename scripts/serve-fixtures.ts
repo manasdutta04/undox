@@ -22,9 +22,27 @@ const TYPES: Record<string, string> = {
 };
 
 createServer((req, res) => {
-  const urlPath = decodeURIComponent((req.url ?? "/").split("?")[0] || "/");
-  const rel = urlPath === "/" ? "/index.html" : urlPath;
-  const target = normalize(join(ROOT, rel));
+  let urlPath: string;
+  try {
+    urlPath = decodeURIComponent((req.url ?? "/").split("?")[0] || "/");
+  } catch {
+    res.writeHead(400, { "content-type": "text/plain" });
+    res.end("Bad request");
+    return;
+  }
+
+  let rel = urlPath === "/" ? "/index.html" : urlPath;
+  let target = normalize(join(ROOT, rel));
+
+  // Directory URLs (e.g. /peoplefind/) → index.html
+  if (existsSync(target) && statSync(target).isDirectory()) {
+    rel = join(rel, "index.html");
+    target = normalize(join(ROOT, rel));
+  } else if (rel.endsWith("/")) {
+    rel = `${rel}index.html`;
+    target = normalize(join(ROOT, rel));
+  }
+
   if (!target.startsWith(ROOT) || !existsSync(target) || !statSync(target).isFile()) {
     res.writeHead(404, { "content-type": "text/plain" });
     res.end("Not found");

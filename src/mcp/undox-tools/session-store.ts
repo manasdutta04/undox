@@ -60,11 +60,12 @@ export function upsertBrokerStatus(
   const now = new Date().toISOString();
   const idx = state.brokers.findIndex((b) => b.broker === broker);
   const next: SessionBrokerState = {
+    ...(idx >= 0 ? state.brokers[idx] : {}),
+    ...patch,
+    // status/broker/updatedAt must win over any stale fields from the spread above
     broker,
     status,
     updatedAt: now,
-    ...(idx >= 0 ? state.brokers[idx] : {}),
-    ...patch,
   };
   const brokers = [...state.brokers];
   if (idx >= 0) brokers[idx] = next;

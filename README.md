@@ -28,41 +28,43 @@ CAPTCHA is flagged to the human (never bypassed). Submission is **mocked** in PR
 
 | Piece | Free choice | Notes |
 |---|---|---|
-| LLM | **[Groq](https://console.groq.com)** | Free tier, no credit card. OpenAI-compatible. |
+| LLM | **[Ollama](https://ollama.com)** local (`gemma4:e2b`) | No cloud TPM; use a model with native `tool_calls` |
+| LLM fallback | Groq / Gemini free tiers | Easy to hit rate limits on multi-tool loops |
 | Agent harness | **TrueForge** (`npx @truefoundry/trueforge`) | MIT, local SQLite |
 | Sandbox | **TrueForge local sandbox** on WSL/Linux/macOS | No Daytona required for PR1 |
-| Broker search (PR1) | **Fixture** via `undox-tools` | Later: Exa in TrueForge catalog (no auth) |
-| Opt-out submit (PR1) | **Mock** | Live POST is a later PR |
+| Broker search (PR1) | **Fixture** via Undox MCP | Later: Exa in TrueForge catalog (no auth) |
+| Opt-out submit (PR1) | **Mock** (`run_spokeo_opt_out`) | Live POST is a later PR |
 | Email confirm (PR6) | Free Gmail + OAuth MCP | Not needed until PR6 |
 | Demo brokers (PR7) | Static HTML in-repo | Zero cost |
 | Code review | **[Qodo](https://github.com/marketplace/qodo-merge-pro)** free plan | Install day one — Best Code Quality |
 | Git hosting | Public GitHub repo | Required for Qodo + judges |
 
-### Groq in TrueForge (Settings → Models)
+### Ollama in TrueForge (recommended free path)
 
-Add a **custom** OpenAI-compatible provider:
-
-| Field | Value |
-|---|---|
-| Type | `custom` (OpenAI-compatible) |
-| Base URL | `https://api.groq.com/openai/v1` |
-| API key | from [console.groq.com](https://console.groq.com) (free) |
-| Model id | `openai/gpt-oss-120b` (preferred) or `openai/gpt-oss-20b` (faster / lighter) |
+1. Install [Ollama](https://ollama.com) and pull a tool-capable model: `ollama pull gemma4:e2b`  
+   (`qwen2.5-coder:7b` often prints JSON instead of native tool calls.)
+2. If TrueForge runs in **WSL**, point the provider at the Windows host IP (not `127.0.0.1`):
 
 ```bash
-UNDOX_MODEL=custom/openai/gpt-oss-120b
+# from WSL
+ip route show | awk '/default/{print $3}'
+UNDOX_OLLAMA_HOST=<that-ip> node --env-file=.env --import tsx scripts/configure-ollama-provider.ts
 ```
 
-(Use the exact FQN shown in the TrueForge model selector after you save the provider.)
+3. Set:
+
+```bash
+UNDOX_MODEL=ollama/gemma4-e2b
+```
 
 ### Windows note
 
-Run TrueForge in **WSL2** with **Node ≥ 22.14**. Native Windows currently crashes in TrueForge v0.1.4 (`Received protocol 'c:'`). Undox’s `npm run demo:approval-gate` / tests run fine on Windows.
+Run TrueForge in **WSL2** with **Node ≥ 22.14**. Native Windows currently crashes in TrueForge v0.1.4 (`Received protocol 'c:'`). Undox’s `npm run demo:approval-gate` / MCP HTTP server / tests run fine on Windows.
 
 ## Prerequisites
 
 - Node.js **≥ 22.14** (WSL/Linux/macOS for TrueForge)
-- Free **Groq** API key
+- **Ollama** with `gemma4:e2b` (or another model that emits native tool calls)
 - **Qodo** GitHub App on this repo (see CONTRIBUTING.md)
 
 ## Setup — TrueForge local mode
@@ -83,24 +85,43 @@ npx @truefoundry/trueforge@latest --port 8790
 
 Open **http://localhost:8790**.
 
-### 3. Connect Groq (free)
+### 3. Connect Ollama (free / local)
 
-1. **Settings → Models → Add** custom OpenAI-compatible provider
-2. Base URL `https://api.groq.com/openai/v1` + Groq API key
-3. Model id `openai/gpt-oss-120b`
-4. Set `UNDOX_MODEL` in `.env` (e.g. `custom/openai/gpt-oss-120b` — use the FQN shown in the selector). Scripts load `.env` via Node `--env-file=.env`.
+1. Keep Ollama running on the host
+2. Configure the TrueForge custom provider (or run `scripts/configure-ollama-provider.ts`)
+3. Set `UNDOX_MODEL=ollama/gemma4-e2b` in `.env`. Scripts load `.env` via Node `--env-file=.env`.
 
 ### 4. Register the Undox MCP connector
 
-**Settings → Connectors → Add MCP Server**
+TrueForge’s UI only accepts **remote URL** MCP servers (not stdio).
+
+**Terminal A** — keep this running on **Windows** (from the repo):
+
+```bash
+npm run mcp:undox-tools:http
+```
+
+You should see it bound on `127.0.0.1:8791` by default (loopback-only).  
+For WSL→Windows access:
+
+```bash
+# Token is required for non-loopback. Host allowlist is optional.
+UNDOX_MCP_HOST=0.0.0.0 UNDOX_MCP_TOKEN=dev-secret npm run mcp:undox-tools:http
+```
+
+Then point TrueForge at `http://<windows-host-ip>:8791/mcp` and send the same token (Bearer or `x-undox-mcp-token`).  
+Only set `UNDOX_MCP_ALLOWED_HOSTS=<windows-host-ip>` if you want extra Host-header checks.
+
+**TrueForge UI** — Settings → Connectors → **Add MCP Server**:
 
 | Field | Value |
 |---|---|
-| Name | `undox-tools` (must match exactly) |
-| Transport | stdio |
-| Command | `npx` |
-| Args | `tsx` `src/mcp/undox-tools/server.ts` |
-| Working directory | absolute path to this `undox` repo |
+| Name | `undox-tool` (must match `UNDOX_MCP_NAME`) |
+| Description | Undox broker find / prepare / approval-gated mock submit |
+| URL | `http://127.0.0.1:8791/mcp` (or Windows host IP from WSL) |
+| Auth type | **None** on loopback; token header when using `UNDOX_MCP_TOKEN` |
+
+Leave API key / header empty. Save.
 
 ### 5. Enable the Spokeo skill (after repo is on GitHub)
 

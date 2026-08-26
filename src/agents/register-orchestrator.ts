@@ -3,9 +3,9 @@
  *
  * Prerequisites:
  *   1. `npx @truefoundry/trueforge` is up at TRUEFORGE_BASE_URL
- *   2. A model provider is configured; UNDOX_MODEL matches a usable model FQN
- *   3. Connector named `undox-tools` is added (see README)
- *   4. Skill `spokeo` is enabled (see README / catalogs/skill-catalog.yaml)
+ *   2. UNDOX_MODEL matches a usable model (prefer ollama/gemma4-e2b)
+ *   3. Connector named UNDOX_MCP_NAME (default undox-tool) is added
+ *   4. Skills imported when UNDOX_ATTACH_SKILLS=true
  */
 
 import { TrueForge } from "@truefoundry/trueforge-sdk";

@@ -1,55 +1,106 @@
 /**
- * Undox orchestrator — PR1 Spokeo mock opt-out.
- *
- * Groq free TPM is ~8k/min. A 3-tool loop (~2.5k tokens/turn) always 429s.
- * Demo path: one tool `run_spokeo_opt_out` → one approval → done.
+ * Undox orchestrator — Double-O harness: MCP + sandbox + subagents + approval + UI.
+ * Prefer local Ollama (no TPM) so multi-tool / subagent loops complete on stage.
  */
 
 import { TrueForge, type TrueForgeApi } from "@truefoundry/trueforge-sdk";
+import { BROKER_SUBAGENT_NAMES } from "./broker-subagent.js";
+import { SEARCH_SUBAGENT_NAME } from "./search-subagent.js";
 
 export const ORCHESTRATOR_NAME = "undox-orchestrator";
 
-export const ORCHESTRATOR_INSTRUCTIONS = `Undox. Call run_spokeo_opt_out once with session_id,name,address,phone,dob,email,mode=mock. No other tools. No chatter.`;
+export const ORCHESTRATOR_INSTRUCTIONS = `You are Undox — remove a person's PII from people-search brokers with human approval.
+
+Session id: use a stable id the user provides, or invent demo-<short> and reuse it every tool call.
+
+Flow (do not skip steps):
+1. SEARCH — Call find_all_broker_listings with session_id + full PII (name, address, phone, dob, email).
+   Prefer spawning a dynamic subagent for search when the harness offers it (${SEARCH_SUBAGENT_NAME} style).
+2. FAN-OUT — For EACH listing (spokeo, peoplefind, clearbook), prepare then submit.
+   Prefer parallel dynamic subagents (one per broker: ${BROKER_SUBAGENT_NAMES.spokeo}, ${BROKER_SUBAGENT_NAMES.peoplefind}, ${BROKER_SUBAGENT_NAMES.clearbook}).
+   Per broker:
+   a. run_sandbox_prepare(session_id, broker, profile_url, same PII) — sandbox prepare script MUST run.
+   b. submit_opt_out(session_id, broker, same PII, mode=mock) — APPROVAL GATE; wait for human Allow.
+3. DASHBOARD — Call get_exposure_dashboard(session_id). Render a compact Generative UI exposure card:
+   risk label/score, per-broker status, short timeline. If Generative UI fails, print the JSON clearly.
+4. RESUME — If the user reconnects, call get_session_state(session_id) and summarize statuses.
+
+Rules:
+- mode=mock only. Never live POST.
+- Never invent profile URLs or PII.
+- Keep chatter minimal; narrate harness beats briefly (search → sandbox prepare → approval → dashboard).
+- Optional fast path only if user asks: run_spokeo_opt_out (Spokeo one-shot).`;
 
 function modelParamsFor(modelName: string): TrueForgeApi.ModelParams {
   const isGptOss = /gpt-oss/i.test(modelName);
   const isOllama = /^ollama\//i.test(modelName);
   return {
-    // Local Ollama has no TPM cap — allow a short post-tool confirmation.
-    // Cloud free tiers stay tiny to avoid 429s.
-    maxTokens: isOllama ? 1024 : 128,
+    maxTokens: isOllama ? 2048 : 256,
     temperature: 0,
-    parallelToolCalls: false,
+    parallelToolCalls: isOllama,
     reasoningEffort: process.env.UNDOX_REASONING_EFFORT ?? (isGptOss ? "low" : "none"),
   };
+}
+
+function enabledTools(): string[] {
+  if (process.env.UNDOX_ONESHOT === "true") {
+    return ["run_spokeo_opt_out"];
+  }
+  return [
+    "find_all_broker_listings",
+    "find_broker_listing",
+    "run_sandbox_prepare",
+    "prepare_opt_out",
+    "submit_opt_out",
+    "get_session_state",
+    "get_exposure_dashboard",
+    "run_spokeo_opt_out",
+  ];
 }
 
 /** Agent manifest for TrueForge agents.create / inline session spec. */
 export function buildOrchestratorManifest(modelName: string): TrueForgeApi.AgentSpec {
   const attachSkills = process.env.UNDOX_ATTACH_SKILLS !== "false";
   const mcpName = process.env.UNDOX_MCP_NAME ?? "undox-tool";
+  const generativeUi = process.env.UNDOX_GENERATIVE_UI !== "false";
+  const tools = enabledTools();
+  const approvalTools = tools.includes("submit_opt_out")
+    ? ["submit_opt_out", "run_spokeo_opt_out", "@write", "@destructive"]
+    : ["run_spokeo_opt_out", "@write", "@destructive"];
 
   return {
     model: {
       name: modelName,
       params: modelParamsFor(modelName),
     },
-    instructions: ORCHESTRATOR_INSTRUCTIONS,
+    instructions:
+      process.env.UNDOX_ONESHOT === "true"
+        ? `Undox oneshot. Call run_spokeo_opt_out once with session_id,name,address,phone,dob,email,mode=mock.`
+        : ORCHESTRATOR_INSTRUCTIONS,
     mcpServers: [
       {
         name: mcpName,
-        enableTools: ["run_spokeo_opt_out"],
-        requireApprovalForTools: ["run_spokeo_opt_out", "@write", "@destructive"],
+        enableTools: tools,
+        requireApprovalForTools: approvalTools,
         preload: true,
       },
     ],
-    ...(attachSkills ? { skills: [{ name: "spokeo" }] } : {}),
+    ...(attachSkills
+      ? {
+          skills: [
+            { name: "spokeo" },
+            { name: "peoplefind" },
+            { name: "clearbook" },
+            { name: "exposure-score" },
+          ],
+        }
+      : {}),
     config: {
       sandbox: { enabled: attachSkills },
-      generativeUi: { enabled: false },
+      generativeUi: { enabled: generativeUi },
       askUserQuestions: { enabled: false },
-      dynamicSubAgents: { enabled: false },
-      iterationLimit: 3,
+      dynamicSubAgents: { enabled: process.env.UNDOX_ONESHOT !== "true" },
+      iterationLimit: Number(process.env.UNDOX_ITERATION_LIMIT ?? 40),
     },
   };
 }

@@ -56,12 +56,13 @@ Carry the full approval payload even if Spokeo does not POST every field:
 - On repeated failures / blocks, pause and report rather than retrying in a tight loop.
 
 ## Sandbox / automation notes
-- Prepare script: `src/sandbox/spokeo-prepare-optout.ts` (also exposed as MCP `prepare_opt_out`).
-- Builds `formFields` + full `pii` for the approval gate; does **not** submit.
-- **PR1 mode:** `submit_opt_out` with `mode=mock` only — logs the payload and marks session status `submitted`. Live HTTP POST is intentionally disabled.
+- Prepare script: `src/sandbox/spokeo-prepare-optout.ts`
+- Prefer MCP `run_sandbox_prepare` so the prepare script process is visible (Double-O sandbox beat).
+- Fallback: `prepare_opt_out` (in-process).
+- `submit_opt_out` with `mode=mock` only in demos — live HTTP POST disabled.
 
 ## Safety
-1. Call `find_broker_listing` (or real search in a later PR) → status `found`.
-2. Call `prepare_opt_out` → status `prepared`.
-3. Call `submit_opt_out` with the **exact** PII fields → TrueForge pauses → human Allow/Deny.
-4. On Allow in mock mode → status `submitted` (confirmation polling is PR6).
+1. `find_broker_listing` / `find_all_broker_listings` → status `found`.
+2. `run_sandbox_prepare` → status `prepared` (`prepare_runtime: sandbox-script`).
+3. `submit_opt_out` with the **exact** PII fields → TrueForge pauses → human Allow/Deny.
+4. On Allow in mock mode → status `submitted`.

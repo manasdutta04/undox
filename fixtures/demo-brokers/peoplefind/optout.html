@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>PeopleFind opt-out (fixture)</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; background: #f7f3ea; }
+    label { display: block; margin-top: 0.75rem; }
+    input { width: 100%; padding: 0.4rem; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; }
+    .badge { background: #c45c26; color: #fff; padding: 0.2rem 0.5rem; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+  <p class="badge">FIXTURE OPT-OUT — Undox mocks the POST</p>
+  <h1>Remove listing</h1>
+  <form onsubmit="event.preventDefault(); document.getElementById('ok').hidden=false;">
+    <label>Listing URL <input name="listing_id" required /></label>
+    <label>Email <input name="contact_email" type="email" required /></label>
+    <label>Full name <input name="full_name" required /></label>
+    <button type="submit">Submit removal</button>
+  </form>
+  <p id="ok" hidden>Confirmation email would be sent (fixture). Undox records mock submit only.</p>
+</body>
+</html>

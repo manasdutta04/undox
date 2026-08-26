@@ -65,19 +65,22 @@ function requireMcpAuth(req: Request, res: Response, next: NextFunction): void {
   next();
 }
 
-// Host allowlist: loopback + optional extra hosts (comma-separated).
-const allowedHosts = [
-  "127.0.0.1",
-  "localhost",
-  ...(process.env.UNDOX_MCP_ALLOWED_HOSTS?.split(",")
-    .map((h) => h.trim())
-    .filter(Boolean) ?? []),
-];
+// Host allowlist is optional. Non-loopback security is UNDOX_MCP_TOKEN;
+// only enable DNS-rebinding Host checks when explicitly configured.
+const explicitAllowedHosts = process.env.UNDOX_MCP_ALLOWED_HOSTS?.split(",")
+  .map((h) => h.trim())
+  .filter(Boolean);
 
-const app = createMcpExpressApp({
-  host: isLoopback ? "127.0.0.1" : HOST,
-  allowedHosts: isLoopback ? ["127.0.0.1", "localhost"] : allowedHosts,
-});
+const app = createMcpExpressApp(
+  isLoopback
+    ? { host: "127.0.0.1" }
+    : {
+        host: HOST,
+        ...(explicitAllowedHosts?.length
+          ? { allowedHosts: explicitAllowedHosts }
+          : {}),
+      },
+);
 const transports: Record<string, StreamableHTTPServerTransport> = {};
 
 app.use("/mcp", requireMcpAuth);
@@ -154,6 +157,11 @@ app.listen(PORT, HOST, () => {
   console.error(`  URL:  ${connectUrl}`);
   console.error(`  Auth: ${TOKEN ? "Bearer / x-undox-mcp-token (UNDOX_MCP_TOKEN set)" : "None (loopback only)"}`);
   if (!isLoopback) {
-    console.error("  Non-loopback bind requires UNDOX_MCP_TOKEN; set UNDOX_MCP_ALLOWED_HOSTS if Host checks fail.");
+    console.error(
+      "  Non-loopback bind requires UNDOX_MCP_TOKEN." +
+        (explicitAllowedHosts?.length
+          ? ` Host allowlist: ${explicitAllowedHosts.join(", ")}`
+          : " Optional: set UNDOX_MCP_ALLOWED_HOSTS only if you want Host-header checks."),
+    );
   }
 });

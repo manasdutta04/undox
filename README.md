@@ -105,10 +105,12 @@ You should see it bound on `127.0.0.1:8791` by default (loopback-only).
 For WSL→Windows access:
 
 ```bash
+# Token is required for non-loopback. Host allowlist is optional.
 UNDOX_MCP_HOST=0.0.0.0 UNDOX_MCP_TOKEN=dev-secret npm run mcp:undox-tools:http
 ```
 
-Then point TrueForge at `http://<windows-host-ip>:8791/mcp` and send the same token (Bearer or `x-undox-mcp-token`).
+Then point TrueForge at `http://<windows-host-ip>:8791/mcp` and send the same token (Bearer or `x-undox-mcp-token`).  
+Only set `UNDOX_MCP_ALLOWED_HOSTS=<windows-host-ip>` if you want extra Host-header checks.
 
 **TrueForge UI** — Settings → Connectors → **Add MCP Server**:
 

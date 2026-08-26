@@ -5,7 +5,7 @@
 
 import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
-import { extname, join, normalize, resolve } from "node:path";
+import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PORT = Number(process.env.UNDOX_FIXTURE_PORT ?? 8792);
@@ -21,13 +21,29 @@ const TYPES: Record<string, string> = {
   ".json": "application/json",
 };
 
+/** Map URL path → absolute filesystem path under ROOT (no leading-slash join bugs). */
+function fsUnderRoot(urlPath: string): string {
+  const trimmed = urlPath.replace(/^\/+/, "").replace(/\/+$/, "");
+  const target = trimmed ? normalize(join(ROOT, ...trimmed.split("/"))) : ROOT;
+  return target;
+}
+
+function isSafeFile(target: string): boolean {
+  const rootWithSep = ROOT.endsWith(sep) ? ROOT : ROOT + sep;
+  return (
+    (target === ROOT || target.startsWith(rootWithSep)) &&
+    existsSync(target) &&
+    statSync(target).isFile()
+  );
+}
+
 createServer((req, res) => {
-  let urlPath: string;
   const rawUrl = req.url ?? "/";
   const qIdx = rawUrl.indexOf("?");
   const pathOnly = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
   const query = qIdx >= 0 ? rawUrl.slice(qIdx) : "";
 
+  let urlPath: string;
   try {
     urlPath = decodeURIComponent(pathOnly || "/");
   } catch {
@@ -36,36 +52,32 @@ createServer((req, res) => {
     return;
   }
 
-  let candidate = normalize(join(ROOT, urlPath === "/" ? "/index.html" : urlPath));
-
-  // Slashless directory (e.g. /peoplefind) → redirect to /peoplefind/ so relative links work
-  if (
-    !urlPath.endsWith("/") &&
-    existsSync(candidate) &&
-    statSync(candidate).isDirectory()
-  ) {
-    res.writeHead(301, { Location: `${urlPath}/${query}` });
-    res.end();
-    return;
+  // Slashless directory (e.g. /peoplefind) → 301 to /peoplefind/
+  // so relative links in index.html resolve under the broker folder.
+  if (urlPath !== "/" && !urlPath.endsWith("/")) {
+    const asDir = fsUnderRoot(urlPath);
+    if (existsSync(asDir) && statSync(asDir).isDirectory()) {
+      res.writeHead(301, { Location: `${urlPath}/${query}` });
+      res.end();
+      return;
+    }
   }
 
-  let rel = urlPath === "/" ? "/index.html" : urlPath;
-  let target = normalize(join(ROOT, rel));
-
-  // Directory URLs (e.g. /peoplefind/) → index.html
-  if (existsSync(target) && statSync(target).isDirectory()) {
-    rel = join(rel, "index.html");
-    target = normalize(join(ROOT, rel));
-  } else if (rel.endsWith("/")) {
-    rel = `${rel}index.html`;
-    target = normalize(join(ROOT, rel));
+  // "/" or "/peoplefind/" → index.html; other paths are literal files
+  let fileRel: string;
+  if (urlPath === "/" || urlPath.endsWith("/")) {
+    fileRel = `${urlPath}index.html`.replace(/\/+/g, "/");
+  } else {
+    fileRel = urlPath;
   }
 
-  if (!target.startsWith(ROOT) || !existsSync(target) || !statSync(target).isFile()) {
+  const target = fsUnderRoot(fileRel);
+  if (!isSafeFile(target)) {
     res.writeHead(404, { "content-type": "text/plain" });
     res.end("Not found");
     return;
   }
+
   const body = readFileSync(target);
   res.writeHead(200, { "content-type": TYPES[extname(target)] ?? "application/octet-stream" });
   res.end(body);

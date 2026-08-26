@@ -1,32 +1,35 @@
-# Generative UI — exposure dashboard
+# Generative UI + local Exposure Dashboard
 
-Undox enables TrueForge **Generative UI** on the orchestrator (`config.generativeUi.enabled`).
+Undox enables TrueForge **Generative UI** on the orchestrator (`config.generativeUi.enabled`) and ships a **local dashboard** for reliable stage demos.
 
-## What the agent should render
+## Local dashboard (Savile Row beat)
 
-After `get_exposure_dashboard(session_id)`, ask the model to emit OpenUI / Generative UI blocks for:
-
-1. **Risk header** — `riskLabel` + `riskScore` + one-line `summary`
-2. **Broker status cards** — one row per broker (`found` → `prepared` → `submitted`)
-3. **Timeline** — last events from the session store
-
-Tool payload shape (from MCP):
-
-```json
-{
-  "sessionId": "demo-…",
-  "riskScore": 84,
-  "riskLabel": "high",
-  "brokers": [{ "broker": "spokeo", "status": "submitted", "profileUrl": "…" }],
-  "timeline": [{ "at": "…", "event": "broker.submitted", "detail": "spokeo" }],
-  "summary": "3 broker(s) tracked · risk high (84) · session demo-…"
-}
+```bash
+npm run dashboard:serve
+# http://127.0.0.1:8793/?session=demo-double-o-1
 ```
 
-## Fallback
+Polls the same `UNDOX_SESSION_STORE` file the MCP writes. Film this beside TrueForge chat: risk score, broker status strip, timeline.
 
-If Generative UI is flaky on a local Ollama model, set `UNDOX_GENERATIVE_UI=false` and have the agent print the same JSON as a markdown table. The Double-O / Savile Row beat still works via the tool result + approval modal.
+| Endpoint | Purpose |
+|---|---|
+| `GET /` | Exposure page |
+| `GET /api/session/:id` | Dashboard JSON (`found`, risk, brokers, timeline) |
+| `GET /api/sessions` | Session id picker |
+
+## Generative UI (in TrueForge chat)
+
+After `get_exposure_dashboard(session_id)`, the orchestrator should emit OpenUI using built-ins, e.g.:
+
+````openui
+root = Card([header, brokers, timeline])
+header = Stack([TextContent("Exposure · high · 84", "large-heavy"), TextContent("3 broker(s) tracked · session demo-…", "small")])
+brokers = Table([Col("Broker"), Col("Status"), Col("Profile")], [["spokeo","submitted","https://…"],["peoplefind","prepared","http://…"]])
+timeline = Markdown("- broker.submitted · spokeo\n- broker.prepared · peoplefind")
+````
+
+If Generative UI is flaky on a small Ollama model, set `UNDOX_GENERATIVE_UI=false` and point judges at the local dashboard URL.
 
 ## Approval copy
 
-`submit_opt_out` is approval-gated. The modal must show **literal** `name`, `address`, `phone`, `dob`, `email` — that is the Savile Row moment; do not redact in the UI.
+`submit_opt_out` is approval-gated. The modal must show **literal** `name`, `address`, `phone`, `dob`, `email` — that is the Savile Row moment; do not redact.

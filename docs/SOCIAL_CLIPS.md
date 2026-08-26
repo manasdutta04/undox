@@ -16,3 +16,8 @@ Tag: WeMakeDevs · TrueFoundry · Qodo · #AgentHarness
 
 **Visual:** Kill TrueForge → restart → `get_session_state` still shows submitted.  
 **VO:** “Kill the server, come back, statuses are still there. Session resume is a first-class beat.”
+
+## Clip 4 — Approval + live dashboard
+
+**Visual:** Split: TrueForge approval modal (literal PII) left; Undox Exposure Dashboard cards updating right.  
+**VO:** “Allow the exact payload — watch risk and broker status update live. That’s the UI beat.”

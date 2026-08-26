@@ -51,6 +51,23 @@ export function saveSession(state: UndoxSessionState): void {
   writeFileSync(path, JSON.stringify(all, null, 2), "utf8");
 }
 
+/** List session ids currently persisted in the store (dashboard picker). */
+export function listSessionIds(): string[] {
+  const path = storePath();
+  if (!existsSync(path)) return [];
+  const all = JSON.parse(readFileSync(path, "utf8")) as Record<string, UndoxSessionState>;
+  return Object.keys(all).sort();
+}
+
+/** Load session or null if missing (dashboard API — never throw for UI poll). */
+export function tryLoadSession(sessionId: string): UndoxSessionState | null {
+  try {
+    return loadSession(sessionId);
+  } catch {
+    return null;
+  }
+}
+
 export function upsertBrokerStatus(
   state: UndoxSessionState,
   broker: BrokerId,

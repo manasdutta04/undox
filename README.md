@@ -20,7 +20,7 @@ opt-outs — with **human approval before every submission**.
 | **Approval** | `submit_opt_out` and `run_spokeo_opt_out` require human Allow on **literal** PII |
 | **Subagents** | `config.dynamicSubAgents.enabled`; search + per-broker fan-out instructions |
 | **Sessions** | File store `.undox-session-state.json` keyed by `session_id` — kill/restart proof in DEMO_SCRIPT |
-| **Generative UI** | Orchestrator enables Generative UI; agent renders exposure dashboard from MCP |
+| **Generative UI** | Orchestrator enables Generative UI (OpenUI Card/Table); plus local Exposure Dashboard at `:8793` |
 
 ## Brokers
 
@@ -90,11 +90,14 @@ Open **http://localhost:8790**.
 
 ```bash
 npm run fixtures:serve
+npm run dashboard:serve
 # other terminal — loopback:
 npm run mcp:undox-tools:http
 # or for WSL→Windows:
 UNDOX_MCP_HOST=0.0.0.0 UNDOX_MCP_TOKEN=dev-secret npm run mcp:undox-tools:http
 ```
+
+Open the dashboard for the session you will use: **http://127.0.0.1:8793/?session=demo-double-o-1**
 
 ### 4. Connect MCP in TrueForge
 
@@ -139,6 +142,7 @@ npm run demo:multi-broker
 | Command | Purpose |
 |---|---|
 | `npm run fixtures:serve` | Static PeopleFind / Clearbook sites (`:8792`) |
+| `npm run dashboard:serve` | Exposure Dashboard UI (`:8793`) |
 | `npm run mcp:undox-tools` | Undox MCP (stdio) |
 | `npm run mcp:undox-tools:http` | Undox MCP (HTTP for TrueForge) |
 | `npm run sandbox:spokeo-prepare` | Spokeo prepare script |
@@ -157,10 +161,11 @@ npm run demo:multi-broker
 
 ## Qodo Code Review Evidence
 
-- **Primary PR:** https://github.com/manasdutta04/undox/pull/3  
-  (`feat: HTTP MCP + one-shot Spokeo opt-out + Ollama path`)  
-  Qodo raised **High** / **Medium** findings (loopback MCP defaults, token for non-loopback binds, PII match on submit, `TRUEFORGE_TOKEN` in configure script, PII log redaction, optional Host allowlist). Fixes landed; follow-up `/agentic_review` before merge.
-- **Earlier PR:** https://github.com/manasdutta04/undox/pull/1 — Medium env-load bug (`UNDOX_MODEL` ignored); resolved via `node --env-file=.env --import tsx`.
+- **Primary PR:** https://github.com/manasdutta04/undox/pull/4  
+  (`feat: Double-O deepen — multi-broker, sandbox, subagents, resume, UI`)  
+  Qodo raised High/Medium findings (failed prepare marked ready, fixture `.env` load, directory `index.html`, URI decode crash, slashless redirect); all marked **Resolved** before squash merge.
+- **Earlier substantive PR:** https://github.com/manasdutta04/undox/pull/3 — HTTP MCP + Ollama path; High/Medium (loopback defaults, token for non-loopback, PII match, log redaction) fixed.
+- **Earlier PR:** https://github.com/manasdutta04/undox/pull/1 — Medium env-load bug; resolved via `node --env-file=.env --import tsx`.
 - Process: `/agentic_review` on every substantive PR → fix → thread reply → re-review → squash merge. No direct pushes to `main`.
 
 ## AI assistance disclosure

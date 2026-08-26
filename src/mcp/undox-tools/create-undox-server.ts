@@ -320,9 +320,9 @@ export function createUndoxServer(): McpServer {
   server.registerTool(
     "submit_opt_out",
     {
-      title: "Submit opt-out",
+      title: "Submit opt-out — human must Allow exact PII",
       description:
-        "APPROVAL-GATED mock submit. Pass session_id, broker, exact PII, mode=mock. Form loads from prepare.",
+        "APPROVAL-GATED mock submit. TrueForge will pause and show the literal name, address, phone, dob, and email — the human must Allow or Deny. Pass session_id, broker, the exact same PII used in prepare, mode=mock. Never invent fields.",
       inputSchema: {
         session_id: z.string(),
         broker: brokerEnum,

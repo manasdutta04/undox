@@ -407,23 +407,32 @@
     }
     function escapeAttr(s) { return escapeHtml(s).replace(/`/g, ""); }
 
-    let pollGen = 0;
+    let pollSeq = 0;
+    let inFlight = false;
+
     async function tick() {
+      if (inFlight) return;
       const id = sessionInput.value.trim();
       if (!id) return;
-      const gen = ++pollGen;
-      const res = await fetch("/api/session/" + encodeURIComponent(id));
-      const data = await res.json();
-      if (gen !== pollGen) return;
-      render(data);
-      const next = new URL(location.href);
-      next.searchParams.set("session", id);
-      history.replaceState(null, "", next);
+      const seq = pollSeq;
+      inFlight = true;
+      try {
+        const res = await fetch("/api/session/" + encodeURIComponent(id));
+        const data = await res.json();
+        if (seq !== pollSeq) return;
+        render(data);
+        const next = new URL(location.href);
+        next.searchParams.set("session", id);
+        history.replaceState(null, "", next);
+      } finally {
+        inFlight = false;
+      }
     }
 
     function start() {
       clearInterval(pollTimer);
-      pollGen++;
+      pollSeq++;
+      inFlight = false;
       tick().catch(console.error);
       pollTimer = setInterval(() => tick().catch(console.error), 2000);
     }

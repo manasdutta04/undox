@@ -23,11 +23,29 @@ const TYPES: Record<string, string> = {
 
 createServer((req, res) => {
   let urlPath: string;
+  const rawUrl = req.url ?? "/";
+  const qIdx = rawUrl.indexOf("?");
+  const pathOnly = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
+  const query = qIdx >= 0 ? rawUrl.slice(qIdx) : "";
+
   try {
-    urlPath = decodeURIComponent((req.url ?? "/").split("?")[0] || "/");
+    urlPath = decodeURIComponent(pathOnly || "/");
   } catch {
     res.writeHead(400, { "content-type": "text/plain" });
     res.end("Bad request");
+    return;
+  }
+
+  let candidate = normalize(join(ROOT, urlPath === "/" ? "/index.html" : urlPath));
+
+  // Slashless directory (e.g. /peoplefind) → redirect to /peoplefind/ so relative links work
+  if (
+    !urlPath.endsWith("/") &&
+    existsSync(candidate) &&
+    statSync(candidate).isDirectory()
+  ) {
+    res.writeHead(301, { Location: `${urlPath}/${query}` });
+    res.end();
     return;
   }
 

@@ -19,23 +19,39 @@ function json(res: import("node:http").ServerResponse, status: number, data: unk
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
-    "access-control-allow-origin": "*",
   });
   res.end(body);
 }
 
 createServer((req, res) => {
   const raw = req.url ?? "/";
-  const url = new URL(raw, `http://127.0.0.1:${PORT}`);
+  let url: URL;
+  try {
+    url = new URL(raw, `http://127.0.0.1:${PORT}`);
+  } catch {
+    res.writeHead(400, { "content-type": "text/plain" });
+    res.end("Bad request");
+    return;
+  }
 
   if (url.pathname === "/api/sessions") {
-    json(res, 200, { sessions: listSessionIds() });
+    try {
+      json(res, 200, { sessions: listSessionIds() });
+    } catch (err) {
+      json(res, 500, { error: "Failed to read session store", detail: String(err) });
+    }
     return;
   }
 
   const sessionMatch = url.pathname.match(/^\/api\/session\/([^/]+)$/);
   if (sessionMatch) {
-    const sessionId = decodeURIComponent(sessionMatch[1]!);
+    let sessionId: string;
+    try {
+      sessionId = decodeURIComponent(sessionMatch[1]!);
+    } catch {
+      json(res, 400, { error: "Malformed session id encoding" });
+      return;
+    }
     json(res, 200, getDashboardOrEmpty(sessionId));
     return;
   }

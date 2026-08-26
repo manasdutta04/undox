@@ -55,8 +55,14 @@ export function saveSession(state: UndoxSessionState): void {
 export function listSessionIds(): string[] {
   const path = storePath();
   if (!existsSync(path)) return [];
-  const all = JSON.parse(readFileSync(path, "utf8")) as Record<string, UndoxSessionState>;
-  return Object.keys(all).sort();
+  try {
+    const raw = readFileSync(path, "utf8");
+    const all = JSON.parse(raw) as Record<string, UndoxSessionState>;
+    if (!all || typeof all !== "object" || Array.isArray(all)) return [];
+    return Object.keys(all).sort();
+  } catch {
+    return [];
+  }
 }
 
 /** Load session or null if missing (dashboard API — never throw for UI poll). */

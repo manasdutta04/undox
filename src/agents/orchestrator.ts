@@ -9,11 +9,16 @@ import { SEARCH_SUBAGENT_NAME } from "./search-subagent.js";
 
 export const ORCHESTRATOR_NAME = "undox-orchestrator";
 
+const DASHBOARD_URL = (
+  process.env.UNDOX_DASHBOARD_URL ??
+  `http://127.0.0.1:${process.env.UNDOX_DASHBOARD_PORT ?? "8793"}`
+).replace(/\/$/, "");
+
 export const ORCHESTRATOR_INSTRUCTIONS = `You are Undox — remove a person's PII from people-search brokers with human approval.
 
 Session id: use a stable id the user provides, or invent demo-<short> and reuse it every tool call.
 Tell the user they can watch live status at the local Exposure Dashboard:
-  http://127.0.0.1:8793/?session=<session_id>
+  ${DASHBOARD_URL}/?session=<session_id>
 
 Flow (do not skip steps):
 1. SEARCH — Call find_all_broker_listings with session_id + full PII (name, address, phone, dob, email).
@@ -35,7 +40,7 @@ Flow (do not skip steps):
    brokers = Table([Col("Broker"), Col("Status"), Col("Profile")], [["spokeo","submitted","https://…"],["peoplefind","prepared","http://…"]])
    timeline = Markdown("- broker.submitted · spokeo\\n- broker.prepared · peoplefind")
    \`\`\`
-   If Generative UI fails, print a clear markdown table AND tell the user to open http://127.0.0.1:8793/?session=<id>.
+   If Generative UI fails, print a clear markdown table AND tell the user to open ${DASHBOARD_URL}/?session=<id>.
 4. RESUME — If the user reconnects, call get_session_state(session_id) and summarize statuses.
 
 Rules:

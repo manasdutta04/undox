@@ -366,8 +366,9 @@
         box.innerHTML = '<div class="broker empty-broker">No brokers yet</div>';
       } else {
         box.innerHTML = brokers.map((b) => {
-          const url = b.profileUrl
-            ? `<a href="${escapeAttr(b.profileUrl)}" target="_blank" rel="noopener">${escapeHtml(b.profileUrl)}</a>`
+          const safeUrl = safeHttpUrl(b.profileUrl);
+          const url = safeUrl
+            ? `<a href="${escapeAttr(safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(safeUrl)}</a>`
             : "<span class='empty-broker'>—</span>";
           return `<article class="broker${changed ? " flash" : ""}" data-broker="${escapeAttr(b.broker)}">
             <h3>${escapeHtml(b.broker)}</h3>
@@ -390,16 +391,30 @@
       $("stamp").textContent = `Updated ${new Date().toLocaleTimeString()} · session ${data.sessionId || "—"}`;
     }
 
+    function safeHttpUrl(raw) {
+      if (!raw || typeof raw !== "string") return "";
+      try {
+        const u = new URL(raw);
+        if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+        return u.href;
+      } catch {
+        return "";
+      }
+    }
+
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
     }
     function escapeAttr(s) { return escapeHtml(s).replace(/`/g, ""); }
 
+    let pollGen = 0;
     async function tick() {
       const id = sessionInput.value.trim();
       if (!id) return;
+      const gen = ++pollGen;
       const res = await fetch("/api/session/" + encodeURIComponent(id));
       const data = await res.json();
+      if (gen !== pollGen) return;
       render(data);
       const next = new URL(location.href);
       next.searchParams.set("session", id);
@@ -408,6 +423,7 @@
 
     function start() {
       clearInterval(pollTimer);
+      pollGen++;
       tick().catch(console.error);
       pollTimer = setInterval(() => tick().catch(console.error), 2000);
     }

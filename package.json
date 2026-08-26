@@ -11,6 +11,7 @@
     "mcp:undox-tools": "node --env-file=.env --import tsx src/mcp/undox-tools/server.ts",
     "mcp:undox-tools:http": "node --env-file=.env --import tsx src/mcp/undox-tools/http-server.ts",
     "fixtures:serve": "node --env-file=.env --import tsx scripts/serve-fixtures.ts",
+    "dashboard:serve": "node --env-file=.env --import tsx scripts/serve-dashboard.ts",
     "sandbox:spokeo-prepare": "node --env-file=.env --import tsx src/sandbox/spokeo-prepare-optout.ts",
     "sandbox:peoplefind-prepare": "node --env-file=.env --import tsx src/sandbox/peoplefind-prepare-optout.ts",
     "sandbox:clearbook-prepare": "node --env-file=.env --import tsx src/sandbox/clearbook-prepare-optout.ts",

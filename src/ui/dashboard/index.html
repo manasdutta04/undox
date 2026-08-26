@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Undox — Exposure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0b1c1a;
+      --panel: rgba(14, 42, 38, 0.72);
+      --line: rgba(180, 230, 210, 0.14);
+      --text: #e6f4ef;
+      --muted: #8fafa6;
+      --accent: #c8f542;
+      --warn: #ffb454;
+      --hot: #ff6b5a;
+      --ok: #5ee0a8;
+      --glow: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(200, 245, 66, 0.18), transparent 55%),
+              radial-gradient(ellipse 60% 40% at 90% 10%, rgba(94, 224, 168, 0.12), transparent 50%),
+              linear-gradient(160deg, #071412 0%, #0f2a26 45%, #0a1a18 100%);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      color: var(--text);
+      background: var(--glow);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 60V0h60' fill='none' stroke='%23c8f542' stroke-opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+      display: grid;
+      gap: 1.75rem;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      animation: rise 0.6s ease-out both;
+    }
+    .brand {
+      font-family: Syne, sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      margin: 0;
+    }
+    .brand span { color: var(--accent); }
+    .tag {
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 28rem;
+      margin: 0.4rem 0 0;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    input, select, button {
+      font: inherit;
+      border-radius: 0.35rem;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 0.55rem 0.75rem;
+    }
+    input { min-width: 12rem; }
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      color: var(--ink);
+      font-weight: 600;
+      border: none;
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+    button:hover { transform: translateY(-1px); filter: brightness(1.05); }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      padding: 1.5rem 0 0.25rem;
+      border-top: 1px solid var(--line);
+      animation: rise 0.7s 0.08s ease-out both;
+    }
+    @media (min-width: 720px) {
+      .hero { grid-template-columns: 1.1fr 1fr; align-items: end; }
+    }
+
+    .risk-score {
+      font-family: Syne, sans-serif;
+      font-weight: 800;
+      font-size: clamp(4.5rem, 14vw, 7.5rem);
+      line-height: 0.85;
+      letter-spacing: -0.06em;
+      margin: 0;
+      transition: color 0.4s ease;
+    }
+    .risk-score[data-label="high"] { color: var(--hot); }
+    .risk-score[data-label="medium"] { color: var(--warn); }
+    .risk-score[data-label="low"] { color: var(--ok); }
+    .risk-meta { margin-top: 0.75rem; }
+    .risk-label {
+      display: inline-block;
+      font-family: Syne, sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding-bottom: 0.15rem;
+      border-bottom: 2px solid currentColor;
+    }
+    .summary { margin: 0.75rem 0 0; color: var(--muted); font-size: 1.05rem; }
+
+    .pulse {
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      margin-top: 1.25rem;
+    }
+    .pulse > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--ok));
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .brokers {
+      display: grid;
+      gap: 0.75rem;
+      animation: rise 0.75s 0.12s ease-out both;
+    }
+    @media (min-width: 720px) {
+      .brokers { grid-template-columns: repeat(3, 1fr); }
+    }
+    .broker {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(8px);
+      padding: 1rem 1.1rem;
+      min-height: 7.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: border-color 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
+    }
+    .broker.flash {
+      animation: flashIn 0.55s ease;
+      border-color: rgba(200, 245, 66, 0.45);
+      box-shadow: 0 0 0 1px rgba(200, 245, 66, 0.2);
+    }
+    .broker h3 {
+      font-family: Syne, sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 0;
+      text-transform: capitalize;
+    }
+    .status {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .status[data-s="found"] { color: var(--warn); }
+    .status[data-s="prepared"], .status[data-s="awaiting_approval"] { color: var(--accent); }
+    .status[data-s="submitted"], .status[data-s="removed"] { color: var(--ok); }
+    .status[data-s="rejected"] { color: var(--hot); }
+    .broker a {
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .broker a:hover { color: var(--text); }
+    .empty-broker { color: var(--muted); font-size: 0.9rem; }
+
+    .timeline {
+      border-top: 1px solid var(--line);
+      padding-top: 1.25rem;
+      animation: rise 0.8s 0.16s ease-out both;
+    }
+    .timeline h2 {
+      font-family: Syne, sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0 0 0.85rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .timeline ol {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.45rem;
+    }
+    .timeline li {
+      display: grid;
+      grid-template-columns: 9.5rem 1fr;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      opacity: 0;
+      animation: fadeRow 0.4s ease forwards;
+    }
+    .timeline time { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .footer {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+    .live {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--ok);
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .live::before {
+      content: "";
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 0 0 rgba(94, 224, 168, 0.6);
+      animation: ping 1.6s ease infinite;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes fadeRow {
+      from { opacity: 0; transform: translateX(-6px); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes flashIn {
+      0% { transform: scale(0.98); }
+      40% { transform: scale(1.015); }
+      100% { transform: none; }
+    }
+    @keyframes ping {
+      0% { box-shadow: 0 0 0 0 rgba(94, 224, 168, 0.55); }
+      70% { box-shadow: 0 0 0 8px rgba(94, 224, 168, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(94, 224, 168, 0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <p class="live">Live exposure</p>
+        <h1 class="brand">Undox <span>Exposure</span></h1>
+        <p class="tag">Risk score, broker statuses, and timeline — fed by the same session store as TrueForge MCP.</p>
+      </div>
+      <div class="controls">
+        <div>
+          <label for="session">Session</label><br />
+          <input id="session" list="session-list" placeholder="demo-double-o-1" autocomplete="off" />
+          <datalist id="session-list"></datalist>
+        </div>
+        <div style="align-self:flex-end">
+          <button type="button" id="load">Watch</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <p class="risk-score" id="score" data-label="low">0</p>
+        <div class="pulse"><i id="bar"></i></div>
+      </div>
+      <div class="risk-meta">
+        <div class="risk-label" id="label">low</div>
+        <p class="summary" id="summary">Enter a session id used by Undox MCP tools.</p>
+      </div>
+    </section>
+
+    <section class="brokers" id="brokers" aria-label="Broker statuses">
+      <div class="broker empty-broker">No brokers yet</div>
+    </section>
+
+    <section class="timeline">
+      <h2>Timeline</h2>
+      <ol id="timeline"></ol>
+      <p class="footer" id="stamp">Polling every 2s</p>
+    </section>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const params = new URLSearchParams(location.search);
+    const sessionInput = $("session");
+    sessionInput.value = params.get("session") || "demo-double-o-1";
+
+    let lastSig = "";
+    let pollTimer;
+
+    async function refreshSessions() {
+      try {
+        const res = await fetch("/api/sessions");
+        const data = await res.json();
+        const list = $("session-list");
+        list.innerHTML = "";
+        for (const id of data.sessions || []) {
+          const opt = document.createElement("option");
+          opt.value = id;
+          list.appendChild(opt);
+        }
+      } catch (_) { /* ignore */ }
+    }
+
+    function render(data) {
+      const sig = JSON.stringify(data);
+      const changed = sig !== lastSig;
+      lastSig = sig;
+
+      const score = $("score");
+      score.textContent = String(data.riskScore ?? 0);
+      score.dataset.label = data.riskLabel || "low";
+      $("label").textContent = data.riskLabel || "low";
+      $("label").style.color = getComputedStyle(score).color;
+      $("summary").textContent = data.summary || "";
+      $("bar").style.width = Math.min(100, Number(data.riskScore) || 0) + "%";
+
+      const box = $("brokers");
+      const brokers = data.brokers || [];
+      if (!brokers.length) {
+        box.innerHTML = '<div class="broker empty-broker">No brokers yet</div>';
+      } else {
+        box.innerHTML = brokers.map((b) => {
+          const safeUrl = safeHttpUrl(b.profileUrl);
+          const url = safeUrl
+            ? `<a href="${escapeAttr(safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(safeUrl)}</a>`
+            : "<span class='empty-broker'>—</span>";
+          return `<article class="broker${changed ? " flash" : ""}" data-broker="${escapeAttr(b.broker)}">
+            <h3>${escapeHtml(b.broker)}</h3>
+            <div class="status" data-s="${escapeAttr(b.status)}">${escapeHtml(b.status)}</div>
+            ${url}
+          </article>`;
+        }).join("");
+      }
+
+      const tl = $("timeline");
+      const events = (data.timeline || []).slice().reverse();
+      tl.innerHTML = events.length
+        ? events.map((e, i) => {
+            const t = e.at ? new Date(e.at).toLocaleTimeString() : "";
+            const detail = e.detail ? ` · ${e.detail}` : "";
+            return `<li style="animation-delay:${i * 0.04}s"><time>${escapeHtml(t)}</time><span>${escapeHtml(e.event || "")}${escapeHtml(detail)}</span></li>`;
+          }).join("")
+        : "<li><time>—</time><span>No events yet</span></li>";
+
+      $("stamp").textContent = `Updated ${new Date().toLocaleTimeString()} · session ${data.sessionId || "—"}`;
+    }
+
+    function safeHttpUrl(raw) {
+      if (!raw || typeof raw !== "string") return "";
+      try {
+        const u = new URL(raw);
+        if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+        return u.href;
+      } catch {
+        return "";
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+    }
+    function escapeAttr(s) { return escapeHtml(s).replace(/`/g, ""); }
+
+    let pollSeq = 0;
+    let inFlight = false;
+
+    async function tick() {
+      if (inFlight) return;
+      const id = sessionInput.value.trim();
+      if (!id) return;
+      const seq = pollSeq;
+      inFlight = true;
+      try {
+        const res = await fetch("/api/session/" + encodeURIComponent(id));
+        const data = await res.json();
+        if (seq !== pollSeq) return;
+        render(data);
+        const next = new URL(location.href);
+        next.searchParams.set("session", id);
+        history.replaceState(null, "", next);
+      } finally {
+        inFlight = false;
+      }
+    }
+
+    function start() {
+      clearInterval(pollTimer);
+      pollSeq++;
+      inFlight = false;
+      tick().catch(console.error);
+      pollTimer = setInterval(() => tick().catch(console.error), 2000);
+    }
+
+    $("load").addEventListener("click", start);
+    sessionInput.addEventListener("keydown", (e) => { if (e.key === "Enter") start(); });
+    refreshSessions();
+    start();
+  </script>
+</body>
+</html>

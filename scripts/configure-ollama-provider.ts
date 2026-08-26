@@ -10,8 +10,13 @@ const baseUrl = process.env.TRUEFORGE_BASE_URL ?? "http://localhost:8790";
 const host = process.env.UNDOX_OLLAMA_HOST ?? "127.0.0.1";
 const ollamaBase = `http://${host}:11434/v1`;
 const model = process.env.UNDOX_MODEL ?? "ollama/gemma4-e2b";
+const token = process.env.TRUEFORGE_TOKEN;
 
-const client = new TrueForge({ baseUrl });
+const client = new TrueForge({
+  baseUrl,
+  ...(token ? { token } : {}),
+  timeoutInSeconds: 120,
+});
 
 await client.settings.modelProviders.createOrUpdate({
   manifest: {

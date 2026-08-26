@@ -101,7 +101,14 @@ TrueForge’s UI only accepts **remote URL** MCP servers (not stdio).
 npm run mcp:undox-tools:http
 ```
 
-You should see it bound on `0.0.0.0:8791`. Use connect URL `http://127.0.0.1:8791/mcp` when TrueForge is on Windows; from WSL TrueForge use `http://<windows-host-ip>:8791/mcp`.
+You should see it bound on `127.0.0.1:8791` by default (loopback-only).  
+For WSL→Windows access:
+
+```bash
+UNDOX_MCP_HOST=0.0.0.0 UNDOX_MCP_TOKEN=dev-secret npm run mcp:undox-tools:http
+```
+
+Then point TrueForge at `http://<windows-host-ip>:8791/mcp` and send the same token (Bearer or `x-undox-mcp-token`).
 
 **TrueForge UI** — Settings → Connectors → **Add MCP Server**:
 
@@ -110,7 +117,7 @@ You should see it bound on `0.0.0.0:8791`. Use connect URL `http://127.0.0.1:879
 | Name | `undox-tool` (must match `UNDOX_MCP_NAME`) |
 | Description | Undox broker find / prepare / approval-gated mock submit |
 | URL | `http://127.0.0.1:8791/mcp` (or Windows host IP from WSL) |
-| Auth type | **None** |
+| Auth type | **None** on loopback; token header when using `UNDOX_MCP_TOKEN` |
 
 Leave API key / header empty. Save.
 

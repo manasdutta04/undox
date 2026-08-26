@@ -43,6 +43,21 @@ function personFrom(args: {
   };
 }
 
+function samePii(a: PiiPayload, b: PiiPayload): boolean {
+  return (
+    a.name === b.name &&
+    a.address === b.address &&
+    a.phone === b.phone &&
+    a.dob === b.dob &&
+    a.email === b.email
+  );
+}
+
+function logMockSubmit(sessionId: string): void {
+  // Never log raw PII — terminals/CI logs are easy to leak.
+  console.error("[undox mock submit]", JSON.stringify({ session_id: sessionId, mode: "mock" }));
+}
+
 /** Build a fresh McpServer with all Undox tools registered. */
 export function createUndoxServer(): McpServer {
   const server = new McpServer({
@@ -97,7 +112,7 @@ export function createUndoxServer(): McpServer {
       });
       state = markSubmitted(state, submission, "PR1 one-shot mock submit.");
 
-      console.error("[undox mock submit]", JSON.stringify({ pii: person, mode: "mock" }));
+      logMockSubmit(args.session_id);
       return jsonResult({
         ok: true,
         status: "submitted",
@@ -224,14 +239,25 @@ export function createUndoxServer(): McpServer {
           ],
         };
       }
+      if (!samePii(prepared.pii, person)) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: "PII does not match the prepared payload. Re-run prepare_opt_out with the same person.",
+            },
+          ],
+        };
+      }
 
       const submission: OptOutSubmission = {
         ...prepared,
-        pii: person,
+        pii: prepared.pii,
         mode: "mock",
       };
 
-      console.error("[undox mock submit]", JSON.stringify({ pii: person, mode: "mock" }));
+      logMockSubmit(args.session_id);
 
       let next = upsertBrokerStatus(state, "spokeo", "awaiting_approval", {
         listing: submission.listing,
@@ -239,7 +265,7 @@ export function createUndoxServer(): McpServer {
       });
       next = markSubmitted(next, submission, "PR1 mock submit — no live HTTP POST.");
 
-      return jsonResult({ ok: true, status: "submitted", pii_sent: person });
+      return jsonResult({ ok: true, status: "submitted", pii_sent: prepared.pii });
     },
   );
 

@@ -36,9 +36,34 @@ export function loadSession(sessionId: string, person?: PiiPayload): UndoxSessio
   const existing = all[sessionId];
   if (existing) return existing;
   if (!person) {
-    throw new Error(`Session ${sessionId} not found`);
+    const known = Object.keys(all);
+    const hint = suggestSessionIds(sessionId, known);
+    throw new Error(
+      `Session ${JSON.stringify(sessionId)} not found.` +
+        (hint ? ` Did you mean ${hint}?` : ""),
+    );
   }
   return emptySession(sessionId, person);
+}
+
+/** Prefer ids that share a prefix with the (possibly truncated) query. */
+function suggestSessionIds(query: string, known: string[]): string | null {
+  const q = query.trim();
+  if (!q) return null;
+  const prefixHits = known.filter((id) => id.startsWith(q) && id !== q);
+  const ranked = (prefixHits.length ? prefixHits : known.filter((id) => id.includes(q) || q.includes(id))).slice();
+  ranked.sort((a, b) => {
+    // Prefer demo-* live/double-o style ids, then shorter completions
+    const score = (id: string) => {
+      let s = 0;
+      if (/-live-\d+$/i.test(id) || /double-o/i.test(id)) s += 20;
+      if (/^demo-[a-z]+-\d+$/i.test(id)) s += 10;
+      s -= Math.min(id.length, 40);
+      return s;
+    };
+    return score(b) - score(a) || a.localeCompare(b);
+  });
+  return ranked.length ? ranked.slice(0, 6).join(", ") : null;
 }
 
 export function saveSession(state: UndoxSessionState): void {

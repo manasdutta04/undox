@@ -39,7 +39,7 @@ Flow (new opt-out — do not skip):
    If no worker spawn: fan out yourself with parallel tool calls (one prepare+submit path per broker).
 2. FAN-OUT — For EACH listing (spokeo, peoplefind, clearbook):
    a. run_sandbox_prepare(session_id, broker, profile_url optional, PII optional after search) — must run; expect prepare_runtime: sandbox-script.
-   b. submit_opt_out(session_id, broker, mode=mock) — APPROVAL GATE with literal name/address/phone/dob/email; wait for human Allow.
+   b. submit_opt_out(session_id, broker, full literal PII, mode=mock) — APPROVAL GATE shows tool-arg PII; wait for human Allow. Never omit PII on submit.
    On tool errors: retry with full session id; recover profile_url via get_session_state or find_* — never ask the user.
 3. DASHBOARD — get_exposure_dashboard(same session_id). Optionally render OpenUI from REAL tool values only:
    \`\`\`openui

@@ -63,7 +63,39 @@ describe("truncated session id hints", () => {
     assert.throws(
       () => loadSession("demo-"),
       (err: Error) => {
-        assert.match(String(err.message), /demo-live-1/);
+        const msg = String(err.message);
+        assert.match(msg, /demo-live-1/);
+        assert.doesNotMatch(msg, /Known ids:/);
+        return true;
+      },
+    );
+  });
+
+  it("does not dump known ids when there is no prefix match", () => {
+    const person = {
+      name: "Alex Rivera",
+      address: "123 Maple Ave Austin TX 78701",
+      phone: "+1-512-555-0142",
+      dob: "1990-04-12",
+      email: "alex.rivera.optout@example.com",
+    };
+    let state = loadSession("demo-live-1", person);
+    state = upsertBrokerStatus(state, "spokeo", "found", {
+      listing: {
+        broker: "spokeo",
+        profileUrl: "https://www.spokeo.com/alex-rivera/p-fx",
+        matchedName: "Alex Rivera",
+        source: "fixture",
+      },
+    });
+    void state;
+    assert.throws(
+      () => loadSession("zzznomatch"),
+      (err: Error) => {
+        const msg = String(err.message);
+        assert.match(msg, /not found/);
+        assert.doesNotMatch(msg, /Known ids:/);
+        assert.doesNotMatch(msg, /demo-live-1/);
         return true;
       },
     );

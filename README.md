@@ -100,6 +100,7 @@ npm run mcp:undox-tools:http
 # WSL TrueForge → Windows MCP:
 UNDOX_MCP_HOST=0.0.0.0 UNDOX_MCP_TOKEN=dev-secret npm run mcp:undox-tools:http
 # then (Windows): UNDOX_MCP_TOKEN=dev-secret node --import tsx scripts/fix-trueforge-mcp-auth.ts
+# OIDC TrueForge: also set TRUEFORGE_TOKEN=… for that script's PUT/GET
 ```
 
 Open: **http://127.0.0.1:8793/?session=demo-double-o-1**

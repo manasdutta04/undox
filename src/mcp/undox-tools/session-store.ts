@@ -40,7 +40,7 @@ export function loadSession(sessionId: string, person?: PiiPayload): UndoxSessio
     const hint = suggestSessionIds(sessionId, known);
     throw new Error(
       `Session ${JSON.stringify(sessionId)} not found.` +
-        (hint ? ` Did you mean ${hint}?` : known.length ? ` Known ids: ${known.slice(-8).join(", ")}` : ""),
+        (hint ? ` Did you mean ${hint}?` : ""),
     );
   }
   return emptySession(sessionId, person);

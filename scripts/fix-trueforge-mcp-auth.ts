@@ -4,20 +4,30 @@
  * TrueForge schema uses auth.type: "header" (singular), not "headers".
  *
  * Env:
- *   TRUEFORGE_BASE_URL   (default http://127.0.0.1:8790)
- *   UNDOX_MCP_TOKEN      (required — same secret MCP was started with)
+ *   TRUEFORGE_BASE_URL    (default http://127.0.0.1:8790)
+ *   TRUEFORGE_TOKEN       (optional — Bearer for OIDC-protected TrueForge)
+ *   UNDOX_MCP_TOKEN       (required — same secret MCP was started with)
  *   UNDOX_MCP_CONNECT_URL (default http://172.27.144.1:8791/mcp for WSL→Windows)
  *
  * Run: node --import tsx scripts/fix-trueforge-mcp-auth.ts
  */
 
 const TF = process.env.TRUEFORGE_BASE_URL ?? "http://127.0.0.1:8790";
-const token = (process.env.UNDOX_MCP_TOKEN ?? "").trim();
+const mcpToken = (process.env.UNDOX_MCP_TOKEN ?? "").trim();
+const tfToken = (process.env.TRUEFORGE_TOKEN ?? "").trim();
 const url = process.env.UNDOX_MCP_CONNECT_URL ?? "http://172.27.144.1:8791/mcp";
 
-if (!token) {
+if (!mcpToken) {
   console.error("Set UNDOX_MCP_TOKEN to the same secret the MCP process uses.");
   process.exit(1);
+}
+
+function tfHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    "content-type": "application/json",
+    ...(tfToken ? { Authorization: `Bearer ${tfToken}` } : {}),
+    ...extra,
+  };
 }
 
 const body = {
@@ -29,7 +39,7 @@ const body = {
     auth: {
       type: "header",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${mcpToken}`,
       },
     },
   },
@@ -37,7 +47,7 @@ const body = {
 
 const put = await fetch(`${TF}/api/v1/settings/mcp-servers`, {
   method: "PUT",
-  headers: { "content-type": "application/json" },
+  headers: tfHeaders(),
   body: JSON.stringify(body),
 });
 const putText = await put.text();
@@ -47,7 +57,9 @@ if (!put.ok) {
   process.exit(1);
 }
 
-const get = await fetch(`${TF}/api/v1/settings/mcp-servers`);
+const get = await fetch(`${TF}/api/v1/settings/mcp-servers`, {
+  headers: tfHeaders(),
+});
 const parsed = (await get.json()) as {
   data: Array<{
     name: string;

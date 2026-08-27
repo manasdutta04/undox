@@ -33,6 +33,19 @@ const sessionIdSchema = z
     message: "session_id must not contain ellipsis — never shorten the id.",
   });
 
+/**
+ * Read-only resume lookups may receive truncated candidates (e.g. demo-) so
+ * loadSession can return "Did you mean …?" hints.
+ */
+const sessionIdLookupSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .refine((s) => !s.includes("…") && !s.includes("..."), {
+    message: "session_id must not contain ellipsis — never shorten the id.",
+  });
+
 const piiSchema = {
   name: z.string(),
   address: z.string(),
@@ -421,7 +434,7 @@ export function createUndoxServer(): McpServer {
         broker: args.broker,
         opt_out_url: optOutUrlFor(args.broker),
         prepare_runtime: "mcp-inline",
-        next: "call submit_opt_out with session_id + broker + mode=mock (PII may be omitted if session already has the person)",
+        next: "call submit_opt_out with session_id + broker + full literal PII + mode=mock (required for the approval modal)",
       });
     },
   );
@@ -431,11 +444,11 @@ export function createUndoxServer(): McpServer {
     {
       title: "Submit opt-out — human must Allow exact PII",
       description:
-        "APPROVAL-GATED mock submit. TrueForge will pause and show the literal name, address, phone, dob, and email — the human must Allow or Deny. Pass session_id, broker, mode=mock. PII optional if the session already has the person from find/prepare.",
+        "APPROVAL-GATED mock submit. TrueForge pauses before this tool runs and shows the literal name, address, phone, dob, and email from the tool arguments — pass every PII field so the human can Allow or Deny. Also pass session_id, broker, mode=mock. Never invent fields.",
       inputSchema: {
         session_id: sessionIdSchema,
         broker: brokerEnum,
-        ...optionalPiiSchema,
+        ...piiSchema,
         mode: z.enum(["mock", "live"]).default("mock"),
       },
       annotations: {
@@ -451,15 +464,7 @@ export function createUndoxServer(): McpServer {
           content: [{ type: "text" as const, text: "Use mode=mock unless UNDOX_ALLOW_LIVE=1 (hackathon demo uses mock)." }],
         };
       }
-      let person: PiiPayload;
-      try {
-        person = resolvePerson(args);
-      } catch (err) {
-        return {
-          isError: true,
-          content: [{ type: "text" as const, text: String(err) }],
-        };
-      }
+      const person = personFrom(args);
       const state = loadSession(args.session_id, person);
       const brokerState = state.brokers.find((b) => b.broker === args.broker);
       const prepared = brokerState?.lastSubmission;
@@ -508,8 +513,9 @@ export function createUndoxServer(): McpServer {
     "get_session_state",
     {
       title: "Get session",
-      description: "Return broker statuses for resume / reconnect demos.",
-      inputSchema: { session_id: sessionIdSchema },
+      description:
+        "Return broker statuses for resume / reconnect demos. Accepts a truncated session_id candidate and may suggest full ids.",
+      inputSchema: { session_id: sessionIdLookupSchema },
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -542,8 +548,8 @@ export function createUndoxServer(): McpServer {
     {
       title: "Exposure dashboard",
       description:
-        "Risk score + per-broker status cards for Generative UI. Call after finds/submits.",
-      inputSchema: { session_id: sessionIdSchema },
+        "Risk score + per-broker status cards for Generative UI. Call after finds/submits. Accepts a truncated session_id candidate and may suggest full ids.",
+      inputSchema: { session_id: sessionIdLookupSchema },
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,

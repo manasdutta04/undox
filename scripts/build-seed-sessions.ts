@@ -25,6 +25,7 @@ if (!raw) {
   process.exit(1);
 }
 
+/** Same-origin fixture paths so the public dashboard can resolve them (see safeHttpUrl). */
 function rewrite(u: string | undefined): string | undefined {
   if (!u) return u;
   return u

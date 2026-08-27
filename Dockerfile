@@ -15,7 +15,8 @@ ENV PORT=8080
 ENV UNDOX_MCP_TOKEN=changeme
 ENV UNDOX_SESSION_STORE=/data/.undox-session-state.json
 
-RUN mkdir -p /data && npm run seed:public && cp deploy/seed-sessions.json /data/.undox-session-state.json
+# Seed is committed (deploy/seed-sessions.json); do not regenerate from local .undox-session-state.json
+RUN mkdir -p /data && cp deploy/seed-sessions.json /data/.undox-session-state.json
 
 EXPOSE 8080
 

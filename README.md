@@ -14,7 +14,7 @@ Judges can verify the Exposure Dashboard, broker fixtures, and MCP heart without
 | Health | https://olive-dealt-infections-projectors.trycloudflare.com/healthz |
 | MCP (Bearer) | `https://olive-dealt-infections-projectors.trycloudflare.com/mcp` |
 
-Demo MCP token (rotate after hackathon): `demo-judge-token`
+MCP requires a Bearer token (`UNDOX_MCP_TOKEN`). Judges verifying dashboard/fixtures do **not** need it; the token is shared only via the private submission form (rotate after hackathon). Do not publish the live token in the repo.
 
 **Approval gate + kill/resume** need the ~3‑minute dual-pane video (TrueForge Allow on literal PII). Hosting TrueForge + Ollama publicly is out of scope this week.
 

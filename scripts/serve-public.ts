@@ -115,10 +115,13 @@ function serveFixture(req: Request, res: Response): void {
 
 ensureSeed();
 
-// Public fixture base for MCP prepare tools that mint listing URLs
+// Public fixture base for MCP prepare tools that mint listing URLs.
+// Prefer UNDOX_PUBLIC_URL (tunnel/Fly); else same-process origin — never the split :8792 default.
 if (!process.env.UNDOX_FIXTURE_BASE_URL) {
   const publicUrl = process.env.UNDOX_PUBLIC_URL?.replace(/\/$/, "");
-  if (publicUrl) process.env.UNDOX_FIXTURE_BASE_URL = `${publicUrl}/fixtures`;
+  process.env.UNDOX_FIXTURE_BASE_URL = publicUrl
+    ? `${publicUrl}/fixtures`
+    : `http://127.0.0.1:${PORT}/fixtures`;
 }
 
 const allowedHosts = process.env.UNDOX_MCP_ALLOWED_HOSTS?.split(",")

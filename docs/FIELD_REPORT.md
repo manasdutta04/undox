@@ -3,6 +3,9 @@
 **Hackathon:** WeMakeDevs × TrueFoundry × Qodo (Agent Harness)  
 **Track focus:** Best Use of TrueForge (Double-O / NVIDIA DGX Spark). Secondary: Qodo code-quality trail (Q Branch / Mac Mini). UI is evidence of state, not the product.
 
+**Live demo:** https://olive-dealt-infections-projectors.trycloudflare.com/?session=demo-test-2  
+(dashboard + fixtures + MCP; approval/kill-resume on the 3‑min video)
+
 ## Problem
 
 People-search brokers republish names, addresses, phones, and dates of birth. Removal is tedious, error-prone, and often irreversible once you hit Submit. Humans deserve a harness that **finds**, **prepares**, then **pauses** with the exact payload before anything leaves the machine — a job people already pay privacy services to do.
@@ -18,9 +21,9 @@ People-search brokers republish names, addresses, phones, and dates of birth. Re
 | Approval | `submit_opt_out` / `run_spokeo_opt_out` require Allow on **literal** PII |
 | Subagents | `dynamicSubAgents` enabled + worker instruction contracts; fallback = parallel tool fan-out |
 | Sessions | File-backed store keyed by `session_id` — kill TrueForge, statuses remain |
-| Status UI | Local Exposure Dashboard (`:8793`) fed by the same store (chat prose is not authoritative) |
+| Status UI | Exposure Dashboard (public `/` or local `:8793`) fed by the same store (chat prose is not authoritative) |
 
-Demo brokers **PeopleFind** and **Clearbook** are static fixtures (`npm run fixtures:serve`) so demos never depend on live CAPTCHAs. Spokeo uses real URL mapping; submit stays **mock** on stage.
+Demo brokers **PeopleFind** and **Clearbook** are static fixtures so demos never depend on live CAPTCHAs. Spokeo uses real URL mapping; submit stays **mock** on stage.
 
 ## Why harness beats matter
 
@@ -30,7 +33,8 @@ A thin chat wrapper that calls one mock function is not a harness story. Judges 
 
 1. Dual-pane: TrueForge left (tools + Allow on Alex Rivera fixture PII) · dashboard right.  
 2. Kill TrueForge → restart → same `session_id` still shows submitted brokers.  
-3. Offline backup: `npm run prove:heart` / `demo:multi-broker` if the LLM flakes.
+3. Live URL: open `/?session=demo-test-2` → risk high + three SUBMITTED cards + fixture links.  
+4. Offline backup: `npm run prove:heart` / `demo:multi-broker` if the LLM flakes.
 
 ## Safety
 
@@ -42,4 +46,4 @@ Every substantive slice ships as a PR with `/agentic_review`. See README **Qodo 
 
 ## Clone path
 
-README stranger path: Ollama + TrueForge (WSL) + MCP HTTP + fixtures + dashboard + `npm run register:agent` — under 15 minutes. Trust dashboard/tools over chat summaries.
+README stranger path: Ollama + TrueForge (WSL) + MCP HTTP + fixtures + dashboard + `npm run register:agent` — or single `npm run serve:public`. Trust dashboard/tools over chat summaries.

@@ -393,8 +393,17 @@
 
     function safeHttpUrl(raw) {
       if (!raw || typeof raw !== "string") return "";
+      const t = raw.trim();
+      // Same-origin fixture paths from public seed / serve:public
+      if (t.startsWith("/fixtures/")) {
+        try {
+          return new URL(t, location.origin).href;
+        } catch {
+          return "";
+        }
+      }
       try {
-        const u = new URL(raw);
+        const u = new URL(t);
         if (u.protocol !== "http:" && u.protocol !== "https:") return "";
         return u.href;
       } catch {

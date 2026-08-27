@@ -19,6 +19,8 @@
     "demo:approval-gate": "node --env-file=.env --import tsx scripts/demo-approval-gate.ts",
     "demo:multi-broker": "node --env-file=.env --import tsx scripts/demo-multi-broker.ts",
     "prove:heart": "node --import tsx scripts/prove-heart.ts",
+    "seed:public": "node --import tsx scripts/build-seed-sessions.ts",
+    "serve:public": "node --import tsx scripts/serve-public.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts"
   },

@@ -1,0 +1,9 @@
+node_modules
+.git
+.env
+*.log
+.undox-session-state.json
+deploy/runtime-sessions.json
+agent-transcripts
+.cursor
+uploads

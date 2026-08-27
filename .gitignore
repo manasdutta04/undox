@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 .undox-session-state.json
+deploy/runtime-sessions.json
 *.log
 .DS_Store
 .trueforge/

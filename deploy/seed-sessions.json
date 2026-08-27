@@ -1,0 +1,200 @@
+{
+  "demo-test-2": {
+    "sessionId": "demo-test-2",
+    "person": {
+      "name": "Alex Rivera",
+      "address": "123 Maple Ave Austin TX 78701",
+      "phone": "+1-512-555-0142",
+      "dob": "1990-04-12",
+      "email": "alex.rivera.optout@example.com"
+    },
+    "brokers": [
+      {
+        "listing": {
+          "broker": "spokeo",
+          "profileUrl": "https://www.spokeo.com/alex-rivera/p-fx",
+          "matchedName": "Alex Rivera",
+          "source": "fixture"
+        },
+        "broker": "spokeo",
+        "status": "submitted",
+        "updatedAt": "2026-08-27T15:30:10.985Z",
+        "lastSubmission": {
+          "broker": "spokeo",
+          "optOutUrl": "https://www.spokeo.com/optout",
+          "listing": {
+            "broker": "spokeo",
+            "profileUrl": "https://www.spokeo.com/alex-rivera/p-fx",
+            "matchedName": "Alex Rivera",
+            "source": "fixture"
+          },
+          "pii": {
+            "name": "Alex Rivera",
+            "address": "123 Maple Ave Austin TX 78701",
+            "phone": "+1-512-555-0142",
+            "dob": "1990-04-12",
+            "email": "alex.rivera.optout@example.com"
+          },
+          "formFields": {
+            "profile_url": "https://www.spokeo.com/alex-rivera/p-fx",
+            "email": "alex.rivera.optout@example.com",
+            "full_name": "Alex Rivera",
+            "address": "123 Maple Ave Austin TX 78701",
+            "phone": "+1-512-555-0142",
+            "date_of_birth": "1990-04-12"
+          },
+          "mode": "mock",
+          "preparedAt": "2026-08-27T15:30:10.748Z",
+          "prepareRuntime": "mcp-inline"
+        },
+        "notes": "Mock submit — no live HTTP POST."
+      },
+      {
+        "listing": {
+          "broker": "peoplefind",
+          "profileUrl": "/fixtures/peoplefind/profile.html?name=Alex%20Rivera",
+          "matchedName": "Alex Rivera",
+          "source": "fixture"
+        },
+        "broker": "peoplefind",
+        "status": "submitted",
+        "updatedAt": "2026-08-27T15:30:10.998Z",
+        "lastSubmission": {
+          "broker": "peoplefind",
+          "optOutUrl": "/fixtures/peoplefind/optout.html",
+          "listing": {
+            "broker": "peoplefind",
+            "profileUrl": "/fixtures/peoplefind/profile.html?name=Alex%20Rivera",
+            "matchedName": "Alex Rivera",
+            "source": "fixture"
+          },
+          "pii": {
+            "name": "Alex Rivera",
+            "address": "123 Maple Ave Austin TX 78701",
+            "phone": "+1-512-555-0142",
+            "dob": "1990-04-12",
+            "email": "alex.rivera.optout@example.com"
+          },
+          "formFields": {
+            "listing_id": "/fixtures/peoplefind/profile.html?name=Alex%20Rivera",
+            "contact_email": "alex.rivera.optout@example.com",
+            "full_name": "Alex Rivera",
+            "home_address": "123 Maple Ave Austin TX 78701",
+            "phone": "+1-512-555-0142",
+            "dob": "1990-04-12"
+          },
+          "mode": "mock",
+          "preparedAt": "2026-08-27T15:30:10.972Z",
+          "prepareRuntime": "sandbox-script"
+        },
+        "notes": "Mock submit — no live HTTP POST."
+      },
+      {
+        "listing": {
+          "broker": "clearbook",
+          "profileUrl": "/fixtures/clearbook/profile.html?q=Alex%20Rivera",
+          "matchedName": "Alex Rivera",
+          "source": "fixture"
+        },
+        "broker": "clearbook",
+        "status": "submitted",
+        "updatedAt": "2026-08-27T15:34:42.087Z",
+        "lastSubmission": {
+          "broker": "clearbook",
+          "optOutUrl": "/fixtures/clearbook/optout.html",
+          "listing": {
+            "broker": "clearbook",
+            "profileUrl": "/fixtures/clearbook/profile.html?q=Alex%20Rivera",
+            "matchedName": "Alex Rivera",
+            "source": "fixture"
+          },
+          "pii": {
+            "name": "Alex Rivera",
+            "address": "123 Maple Ave Austin TX 78701",
+            "phone": "+1-512-555-0142",
+            "dob": "1990-04-12",
+            "email": "alex.rivera.optout@example.com"
+          },
+          "formFields": {
+            "profile": "/fixtures/clearbook/profile.html?q=Alex%20Rivera",
+            "email": "alex.rivera.optout@example.com",
+            "name": "Alex Rivera",
+            "address": "123 Maple Ave Austin TX 78701",
+            "mobile": "+1-512-555-0142",
+            "birthdate": "1990-04-12"
+          },
+          "mode": "mock",
+          "preparedAt": "2026-08-27T15:34:25.627Z",
+          "prepareRuntime": "sandbox-script"
+        },
+        "notes": "Mock submit — no live HTTP POST."
+      }
+    ],
+    "timeline": [
+      {
+        "at": "2026-08-27T15:29:13.821Z",
+        "event": "session.created"
+      },
+      {
+        "at": "2026-08-27T15:29:13.822Z",
+        "event": "broker.found",
+        "detail": "spokeo"
+      },
+      {
+        "at": "2026-08-27T15:29:13.827Z",
+        "event": "broker.found",
+        "detail": "peoplefind"
+      },
+      {
+        "at": "2026-08-27T15:29:13.830Z",
+        "event": "broker.found",
+        "detail": "clearbook"
+      },
+      {
+        "at": "2026-08-27T15:30:10.750Z",
+        "event": "broker.prepared",
+        "detail": "spokeo"
+      },
+      {
+        "at": "2026-08-27T15:30:10.974Z",
+        "event": "broker.prepared",
+        "detail": "peoplefind"
+      },
+      {
+        "at": "2026-08-27T15:30:10.982Z",
+        "event": "broker.awaiting_approval",
+        "detail": "spokeo"
+      },
+      {
+        "at": "2026-08-27T15:30:10.985Z",
+        "event": "broker.submitted",
+        "detail": "spokeo"
+      },
+      {
+        "at": "2026-08-27T15:30:10.994Z",
+        "event": "broker.awaiting_approval",
+        "detail": "peoplefind"
+      },
+      {
+        "at": "2026-08-27T15:30:10.998Z",
+        "event": "broker.submitted",
+        "detail": "peoplefind"
+      },
+      {
+        "at": "2026-08-27T15:34:25.628Z",
+        "event": "broker.prepared",
+        "detail": "clearbook"
+      },
+      {
+        "at": "2026-08-27T15:34:42.083Z",
+        "event": "broker.awaiting_approval",
+        "detail": "clearbook"
+      },
+      {
+        "at": "2026-08-27T15:34:42.087Z",
+        "event": "broker.submitted",
+        "detail": "clearbook"
+      }
+    ]
+  }
+}

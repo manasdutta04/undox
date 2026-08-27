@@ -16,12 +16,38 @@ import { loadSession, markSubmitted, upsertBrokerStatus } from "./session-store.
 
 const brokerEnum = z.enum(["spokeo", "peoplefind", "clearbook"]);
 
+/** Reject truncated / placeholder session ids that small models invent from prompt ellipses. */
+const sessionIdSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(64)
+  .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/, {
+    message: "session_id must be alphanumeric (plus . _ -)",
+  })
+  .refine((s) => !s.endsWith("-") && !s.endsWith(".") && !s.endsWith("_"), {
+    message:
+      "session_id looks truncated (ends with a separator). Pass the full id from the user (e.g. demo-live-1).",
+  })
+  .refine((s) => !s.includes("…") && !s.includes("..."), {
+    message: "session_id must not contain ellipsis — never shorten the id.",
+  });
+
 const piiSchema = {
   name: z.string(),
   address: z.string(),
   phone: z.string(),
   dob: z.string(),
   email: z.string().email(),
+};
+
+/** Optional PII — filled from the session's stored person when the model omits a field. */
+const optionalPiiSchema = {
+  name: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  dob: z.string().optional(),
+  email: z.string().email().optional(),
 };
 
 function jsonResult(data: unknown) {
@@ -44,6 +70,60 @@ function personFrom(args: {
     dob: args.dob,
     email: args.email,
   };
+}
+
+type PartialPiiArgs = {
+  session_id: string;
+  name?: string;
+  address?: string;
+  phone?: string;
+  dob?: string;
+  email?: string;
+};
+
+/** Merge tool args with person already on the session (small models often drop phone/email mid-flow). */
+function resolvePerson(args: PartialPiiArgs): PiiPayload {
+  let storedPerson: PiiPayload | undefined;
+  try {
+    storedPerson = loadSession(args.session_id).person;
+  } catch {
+    storedPerson = undefined;
+  }
+  const person: PiiPayload = {
+    name: (args.name ?? storedPerson?.name ?? "").trim(),
+    address: (args.address ?? storedPerson?.address ?? "").trim(),
+    phone: (args.phone ?? storedPerson?.phone ?? "").trim(),
+    dob: (args.dob ?? storedPerson?.dob ?? "").trim(),
+    email: (args.email ?? storedPerson?.email ?? "").trim(),
+  };
+  const missing = (["name", "address", "phone", "dob", "email"] as const).filter(
+    (k) => !person[k],
+  );
+  if (missing.length) {
+    throw new Error(
+      `Missing PII: ${missing.join(", ")}. Pass full PII on the first find_* call, or include every field on this tool call.`,
+    );
+  }
+  return person;
+}
+
+/** Resolve profile URL from args, then session listing, then fixture generator. */
+function resolveProfileUrl(
+  sessionId: string,
+  broker: BrokerId,
+  person: PiiPayload,
+  profileUrl?: string,
+): string {
+  const provided = profileUrl?.trim();
+  if (provided) return provided;
+  try {
+    const fromSession = loadSession(sessionId).brokers.find((b) => b.broker === broker)
+      ?.listing?.profileUrl;
+    if (fromSession) return fromSession;
+  } catch {
+    /* no session yet */
+  }
+  return listingFor(broker, person).profileUrl;
 }
 
 function samePii(a: PiiPayload, b: PiiPayload): boolean {
@@ -133,7 +213,7 @@ export function createUndoxServer(): McpServer {
       description:
         "Fixture search across spokeo + peoplefind + clearbook. Returns listings for subagent fan-out.",
       inputSchema: {
-        session_id: z.string(),
+        session_id: sessionIdSchema,
         ...piiSchema,
       },
       annotations: {
@@ -162,7 +242,7 @@ export function createUndoxServer(): McpServer {
       title: "Find listing",
       description: "Find one broker listing (spokeo | peoplefind | clearbook).",
       inputSchema: {
-        session_id: z.string(),
+        session_id: sessionIdSchema,
         broker: brokerEnum,
         ...piiSchema,
       },
@@ -190,12 +270,12 @@ export function createUndoxServer(): McpServer {
     {
       title: "Run sandbox prepare script",
       description:
-        "Execute the broker prepare TypeScript script (sandbox beat). Prefer this before submit.",
+        "Execute the broker prepare TypeScript script (sandbox beat). Prefer this before submit. profile_url optional — uses the session listing or fixture URL when omitted.",
       inputSchema: {
-        session_id: z.string(),
+        session_id: sessionIdSchema,
         broker: brokerEnum,
-        profile_url: z.string().url(),
-        ...piiSchema,
+        profile_url: z.string().url().optional(),
+        ...optionalPiiSchema,
       },
       annotations: {
         readOnlyHint: true,
@@ -204,10 +284,24 @@ export function createUndoxServer(): McpServer {
       },
     },
     async (args) => {
-      const person = personFrom(args);
+      let person: PiiPayload;
+      try {
+        person = resolvePerson(args);
+      } catch (err) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(err) }],
+        };
+      }
+      const profileUrl = resolveProfileUrl(
+        args.session_id,
+        args.broker,
+        person,
+        args.profile_url,
+      );
       const listing: BrokerListing = {
         broker: args.broker,
-        profileUrl: args.profile_url,
+        profileUrl,
         matchedName: person.name,
         source: "fixture",
       };
@@ -221,7 +315,7 @@ export function createUndoxServer(): McpServer {
         DEMO_PHONE: person.phone,
         DEMO_DOB: person.dob,
         DEMO_EMAIL: person.email,
-        DEMO_PROFILE_URL: args.profile_url,
+        DEMO_PROFILE_URL: profileUrl,
         UNDOX_FIXTURE_BASE_URL: fixtureBase(),
       };
       const ran = spawnSync(
@@ -279,12 +373,13 @@ export function createUndoxServer(): McpServer {
     "prepare_opt_out",
     {
       title: "Prepare opt-out",
-      description: "Build form fields in-process (fallback). Prefer run_sandbox_prepare for demos.",
+      description:
+        "Build form fields in-process (fallback). Prefer run_sandbox_prepare for demos. PII and profile_url optional if already on the session.",
       inputSchema: {
-        session_id: z.string(),
+        session_id: sessionIdSchema,
         broker: brokerEnum,
-        profile_url: z.string().url(),
-        ...piiSchema,
+        profile_url: z.string().url().optional(),
+        ...optionalPiiSchema,
       },
       annotations: {
         readOnlyHint: true,
@@ -293,10 +388,24 @@ export function createUndoxServer(): McpServer {
       },
     },
     async (args) => {
-      const person = personFrom(args);
+      let person: PiiPayload;
+      try {
+        person = resolvePerson(args);
+      } catch (err) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(err) }],
+        };
+      }
+      const profileUrl = resolveProfileUrl(
+        args.session_id,
+        args.broker,
+        person,
+        args.profile_url,
+      );
       const listing: BrokerListing = {
         broker: args.broker,
-        profileUrl: args.profile_url,
+        profileUrl,
         matchedName: person.name,
         source: "fixture",
       };
@@ -312,7 +421,7 @@ export function createUndoxServer(): McpServer {
         broker: args.broker,
         opt_out_url: optOutUrlFor(args.broker),
         prepare_runtime: "mcp-inline",
-        next: "call submit_opt_out with session_id + broker + same PII + mode=mock",
+        next: "call submit_opt_out with session_id + broker + mode=mock (PII may be omitted if session already has the person)",
       });
     },
   );
@@ -322,11 +431,11 @@ export function createUndoxServer(): McpServer {
     {
       title: "Submit opt-out — human must Allow exact PII",
       description:
-        "APPROVAL-GATED mock submit. TrueForge will pause and show the literal name, address, phone, dob, and email — the human must Allow or Deny. Pass session_id, broker, the exact same PII used in prepare, mode=mock. Never invent fields.",
+        "APPROVAL-GATED mock submit. TrueForge will pause and show the literal name, address, phone, dob, and email — the human must Allow or Deny. Pass session_id, broker, mode=mock. PII optional if the session already has the person from find/prepare.",
       inputSchema: {
-        session_id: z.string(),
+        session_id: sessionIdSchema,
         broker: brokerEnum,
-        ...piiSchema,
+        ...optionalPiiSchema,
         mode: z.enum(["mock", "live"]).default("mock"),
       },
       annotations: {
@@ -342,7 +451,15 @@ export function createUndoxServer(): McpServer {
           content: [{ type: "text" as const, text: "Use mode=mock unless UNDOX_ALLOW_LIVE=1 (hackathon demo uses mock)." }],
         };
       }
-      const person = personFrom(args);
+      let person: PiiPayload;
+      try {
+        person = resolvePerson(args);
+      } catch (err) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(err) }],
+        };
+      }
       const state = loadSession(args.session_id, person);
       const brokerState = state.brokers.find((b) => b.broker === args.broker);
       const prepared = brokerState?.lastSubmission;
@@ -392,7 +509,7 @@ export function createUndoxServer(): McpServer {
     {
       title: "Get session",
       description: "Return broker statuses for resume / reconnect demos.",
-      inputSchema: { session_id: z.string() },
+      inputSchema: { session_id: sessionIdSchema },
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -426,7 +543,7 @@ export function createUndoxServer(): McpServer {
       title: "Exposure dashboard",
       description:
         "Risk score + per-broker status cards for Generative UI. Call after finds/submits.",
-      inputSchema: { session_id: z.string() },
+      inputSchema: { session_id: sessionIdSchema },
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -453,7 +570,7 @@ export function createUndoxServer(): McpServer {
       title: "One-shot Spokeo opt-out",
       description: "Optional fast path: Spokeo find+prepare+mock-submit in one approval.",
       inputSchema: {
-        session_id: z.string(),
+        session_id: sessionIdSchema,
         ...piiSchema,
         mode: z.enum(["mock", "live"]).default("mock"),
       },

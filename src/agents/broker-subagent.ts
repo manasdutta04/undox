@@ -1,7 +1,10 @@
 /**
- * Per-broker subagent — prepare (sandbox script) then approval-gated submit.
- * With TrueForge today, the root agent enables dynamicSubAgents and fans out;
- * these specs document the intended per-broker worker contract.
+ * Per-broker worker contract for TrueForge dynamicSubAgents.
+ *
+ * These manifests are instruction templates the orchestrator references when the
+ * harness spawns a worker. They are not separately registered as saved agents —
+ * the root `undox-orchestrator` enables `dynamicSubAgents` and fans out via
+ * parallel MCP tool calls when workers are not spawned.
  */
 
 import type { TrueForgeApi } from "@truefoundry/trueforge-sdk";
@@ -16,7 +19,7 @@ export const BROKER_SUBAGENT_NAMES: Record<BrokerId, string> = {
 };
 
 export function brokerSubagentInstructions(broker: BrokerId): string {
-  return `You are the Undox ${broker} broker subagent.
+  return `You are the Undox ${broker} broker worker.
 For the given session_id + person PII + profile_url:
 
 1. Call run_sandbox_prepare(session_id, broker="${broker}", profile_url, …PII)
@@ -25,9 +28,10 @@ For the given session_id + person PII + profile_url:
    — TrueForge will pause for human approval showing the literal PII. Wait for Allow.
 3. Optionally call get_session_state(session_id) and return status.
 
-Never use mode=live. Never invent PII. Never skip approval.`;
+Never use mode=live. Never invent PII. Never skip approval. Never ask the user for fields already on the session.`;
 }
 
+/** Instruction-only worker spec (not a separately registered TrueForge agent). */
 export function buildBrokerSubagentManifest(
   broker: BrokerId,
   modelName: string,

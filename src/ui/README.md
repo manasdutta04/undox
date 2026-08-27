@@ -23,7 +23,7 @@ After `get_exposure_dashboard(session_id)`, the orchestrator should emit OpenUI 
 
 ````openui
 root = Card([header, brokers, timeline])
-header = Stack([TextContent("Exposure · high · 84", "large-heavy"), TextContent("3 broker(s) tracked · session demo-…", "small")])
+header = Stack([TextContent("Exposure · high · 84", "large-heavy"), TextContent("3 broker(s) tracked · session demo-live-1", "small")])
 brokers = Table([Col("Broker"), Col("Status"), Col("Profile")], [["spokeo","submitted","https://…"],["peoplefind","prepared","http://…"]])
 timeline = Markdown("- broker.submitted · spokeo\n- broker.prepared · peoplefind")
 ````

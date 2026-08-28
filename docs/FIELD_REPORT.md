@@ -3,8 +3,8 @@
 **Hackathon:** WeMakeDevs × TrueFoundry × Qodo (Agent Harness)  
 **Track focus:** Best Use of TrueForge (Double-O / NVIDIA DGX Spark). Secondary: Qodo code-quality trail (Q Branch / Mac Mini). UI is evidence of state, not the product.
 
-**Live demo:** https://olive-dealt-infections-projectors.trycloudflare.com/?session=demo-test-2  
-(dashboard + fixtures + MCP; approval/kill-resume on the 3‑min video)
+**Live demo:** https://undox-demo.onrender.com/?session=demo-test-2  
+(dashboard + fixtures + MCP; free Render tier may sleep — first load ~1 min; approval/kill-resume on the 3‑min video)
 
 ## Problem
 

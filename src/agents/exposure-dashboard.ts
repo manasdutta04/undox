@@ -13,8 +13,7 @@ function buildMilestones(state: UndoxSessionState): ExposureDashboard["milestone
     .map((broker) => {
       const b = byBroker.get(broker)!;
       const events = state.timeline.filter((e) => e.detail === broker);
-      const submitted = events.find((e) => e.event === "broker.submitted");
-      const latest = submitted ?? events[events.length - 1];
+      const latest = events[events.length - 1];
       return {
         broker,
         status: b.status,

@@ -50,6 +50,7 @@
     const U = window.UndoxSite;
     let lastSig = "";
     let pollTimer;
+    let pollSeq = 0;
 
     async function refreshSessions() {
       try {
@@ -105,8 +106,11 @@
     }
 
     async function tick() {
+      const id = U.sessionFromUrl();
+      const seq = ++pollSeq;
       try {
         const data = await U.fetchSession();
+        if (seq !== pollSeq || id !== U.sessionFromUrl()) return;
         render(data);
       } catch (e) {
         console.error(e);
@@ -116,6 +120,7 @@
     function start() {
       clearInterval(pollTimer);
       lastSig = "";
+      pollSeq++;
       tick();
       pollTimer = setInterval(tick, 5000);
     }

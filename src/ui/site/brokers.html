@@ -36,6 +36,7 @@
     const STEPS = ["found", "prepared", "awaiting_approval", "submitted"];
     let detail = null;
     let active = "spokeo";
+    let loadSeq = 0;
 
     function pipeline(status) {
       const idx = STEPS.indexOf(status);
@@ -88,7 +89,10 @@
     }
 
     async function load() {
+      const id = U.sessionFromUrl();
+      const seq = ++loadSeq;
       detail = await U.fetchDetail();
+      if (seq !== loadSeq || id !== U.sessionFromUrl()) return;
       if (!detail.found) {
         document.getElementById("panel").innerHTML = "<p class='empty'>" + U.escapeHtml(detail.sessionId) + " not found.</p>";
         return;

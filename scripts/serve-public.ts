@@ -22,6 +22,7 @@ import {
   DEFAULT_SESSION,
   readSiteFile,
   decodeSessionId,
+  publicDetailIncludesPii,
 } from "./ui-site.js";
 
 const PORT = Number(process.env.PORT ?? process.env.UNDOX_PUBLIC_PORT ?? 8080);
@@ -187,7 +188,9 @@ app.get("/api/session/:id/detail", (req, res) => {
     return;
   }
   res.set("cache-control", "no-store");
-  res.json(getSessionDetailOrEmpty(sessionId));
+  res.json(getSessionDetailOrEmpty(sessionId, {
+    includePii: publicDetailIncludesPii(sessionId),
+  }));
 });
 
 app.get("/api/session/:id", (req, res) => {

@@ -36,13 +36,17 @@
   <script>
     const U = window.UndoxSite;
     const PII_KEYS = ["name", "address", "phone", "dob", "email"];
+    let loadSeq = 0;
 
     function renderKv(obj, keys) {
       return keys.map((k) => `<dt>${U.escapeHtml(k)}</dt><dd>${U.escapeHtml(obj?.[k] ?? "—")}</dd>`).join("");
     }
 
     async function load() {
+      const id = U.sessionFromUrl();
+      const seq = ++loadSeq;
       const data = await U.fetchDetail();
+      if (seq !== loadSeq || id !== U.sessionFromUrl()) return;
       const root = document.getElementById("panels");
       if (!data.found) {
         root.innerHTML = "<p class='empty'>Session not found.</p>";

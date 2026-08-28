@@ -11,6 +11,17 @@ export const UI_SITE = resolve(HERE, "../src/ui/site");
 
 export const DEFAULT_SESSION = "demo-test-2";
 
+/** Sessions allowed to expose fixture PII on the public detail API (comma-separated env override). */
+export function publicDetailSessions(): Set<string> {
+  const raw =
+    process.env.UNDOX_PUBLIC_DETAIL_SESSIONS?.trim() || DEFAULT_SESSION;
+  return new Set(raw.split(",").map((s) => s.trim()).filter(Boolean));
+}
+
+export function publicDetailIncludesPii(sessionId: string): boolean {
+  return publicDetailSessions().has(sessionId);
+}
+
 /** Pathname → HTML file (without leading slash). */
 export const SITE_PAGES: Record<string, string> = {
   "/": "home.html",

@@ -68,4 +68,11 @@ describe("dashboard API", () => {
     assert.equal(detail.found, false);
     assert.equal(detail.brokers.length, 0);
   });
+
+  it("redacts PII when includePii is false", () => {
+    const detail = getSessionDetailOrEmpty("dash-1", { includePii: false });
+    assert.equal(detail.found, true);
+    assert.equal(detail.person, undefined);
+    assert.equal(detail.brokers[0]?.lastSubmission, undefined);
+  });
 });

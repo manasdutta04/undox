@@ -23,7 +23,11 @@ export function getDashboardOrEmpty(sessionId: string): ExposureDashboard & { fo
   return { found: true, ...buildExposureDashboard(state) };
 }
 
-export function getSessionDetailOrEmpty(sessionId: string): SessionDetailResponse {
+export function getSessionDetailOrEmpty(
+  sessionId: string,
+  opts?: { includePii?: boolean },
+): SessionDetailResponse {
+  const includePii = opts?.includePii !== false;
   const state = tryLoadSession(sessionId);
   if (!state) {
     return { found: false, sessionId, brokers: [] };
@@ -31,13 +35,13 @@ export function getSessionDetailOrEmpty(sessionId: string): SessionDetailRespons
   return {
     found: true,
     sessionId: state.sessionId,
-    person: state.person,
+    person: includePii ? state.person : undefined,
     brokers: state.brokers.map((b) => ({
       broker: b.broker,
       status: b.status,
       profileUrl: b.listing?.profileUrl,
       optOutUrl: b.lastSubmission?.optOutUrl,
-      lastSubmission: b.lastSubmission,
+      lastSubmission: includePii ? b.lastSubmission : undefined,
     })),
   };
 }

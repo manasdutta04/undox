@@ -115,18 +115,36 @@ function serveFixture(req: Request, res: Response): void {
 
 ensureSeed();
 
+/** Render / Fly public URL when UNDOX_PUBLIC_URL is not set explicitly. */
+function resolvePublicUrl(): string | undefined {
+  const explicit = process.env.UNDOX_PUBLIC_URL?.trim().replace(/\/$/, "");
+  if (explicit) return explicit;
+  const render = process.env.RENDER_EXTERNAL_URL?.trim().replace(/\/$/, "");
+  return render || undefined;
+}
+
+const publicUrl = resolvePublicUrl();
+if (publicUrl && !process.env.UNDOX_PUBLIC_URL) {
+  process.env.UNDOX_PUBLIC_URL = publicUrl;
+}
+
 // Public fixture base for MCP prepare tools that mint listing URLs.
-// Prefer UNDOX_PUBLIC_URL (tunnel/Fly); else same-process origin — never the split :8792 default.
 if (!process.env.UNDOX_FIXTURE_BASE_URL) {
-  const publicUrl = process.env.UNDOX_PUBLIC_URL?.replace(/\/$/, "");
   process.env.UNDOX_FIXTURE_BASE_URL = publicUrl
     ? `${publicUrl}/fixtures`
     : `http://127.0.0.1:${PORT}/fixtures`;
 }
 
-const allowedHosts = process.env.UNDOX_MCP_ALLOWED_HOSTS?.split(",")
+const envAllowedHosts = process.env.UNDOX_MCP_ALLOWED_HOSTS?.split(",")
   .map((h) => h.trim())
   .filter(Boolean);
+const renderHostname = process.env.RENDER_EXTERNAL_HOSTNAME?.trim();
+const allowedHosts =
+  envAllowedHosts?.length
+    ? envAllowedHosts
+    : renderHostname
+      ? [renderHostname]
+      : undefined;
 
 const app = createUndoxMcpApp({
   host: HOST,

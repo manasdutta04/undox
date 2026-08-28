@@ -115,12 +115,18 @@ function serveFixture(req: Request, res: Response): void {
 
 ensureSeed();
 
+/** Ensure public URL has a scheme (Render host-only values need https://). */
+function normalizePublicUrl(url: string): string {
+  const trimmed = url.trim().replace(/\/$/, "");
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 /** Render / Fly public URL when UNDOX_PUBLIC_URL is not set explicitly. */
 function resolvePublicUrl(): string | undefined {
-  const explicit = process.env.UNDOX_PUBLIC_URL?.trim().replace(/\/$/, "");
-  if (explicit) return explicit;
-  const render = process.env.RENDER_EXTERNAL_URL?.trim().replace(/\/$/, "");
-  return render || undefined;
+  const explicit = process.env.UNDOX_PUBLIC_URL?.trim();
+  if (explicit) return normalizePublicUrl(explicit);
+  const render = process.env.RENDER_EXTERNAL_URL?.trim();
+  return render ? normalizePublicUrl(render) : undefined;
 }
 
 const publicUrl = resolvePublicUrl();

@@ -9,10 +9,12 @@ Judges can verify the Exposure Dashboard, broker fixtures, and MCP heart without
 
 | What | URL |
 |---|---|
-| **Dashboard** (seeded `demo-test-2`, risk 100 / all submitted) | https://olive-dealt-infections-projectors.trycloudflare.com/?session=demo-test-2 |
-| Fixtures | https://olive-dealt-infections-projectors.trycloudflare.com/fixtures/peoplefind/ · [/clearbook/](https://olive-dealt-infections-projectors.trycloudflare.com/fixtures/clearbook/) |
-| Health | https://olive-dealt-infections-projectors.trycloudflare.com/healthz |
-| MCP (Bearer) | `https://olive-dealt-infections-projectors.trycloudflare.com/mcp` |
+| **Dashboard** (seeded `demo-test-2`, risk 100 / all submitted) | https://undox-demo.onrender.com/?session=demo-test-2 |
+| Fixtures | https://undox-demo.onrender.com/fixtures/peoplefind/ · [/clearbook/](https://undox-demo.onrender.com/fixtures/clearbook/) |
+| Health | https://undox-demo.onrender.com/healthz |
+| MCP (Bearer) | `https://undox-demo.onrender.com/mcp` |
+
+> **Free Render tier:** the service sleeps after ~15 min idle; **first load may take up to ~1 minute**. Optional keep-warm: ping `/healthz` every 10 min with [UptimeRobot](https://uptimerobot.com) (free).
 
 MCP requires a Bearer token (`UNDOX_MCP_TOKEN`). Judges verifying dashboard/fixtures do **not** need it; the token is shared only via the private submission form (rotate after hackathon). Do not publish the live token in the repo.
 
@@ -53,6 +55,7 @@ CAPTCHA is flagged to the human (never bypassed). Live POSTs stay off unless you
 |---|---|---|
 | LLM | **[Ollama](https://ollama.com)** local (`gemma4:e2b`) | Need native `tool_calls` |
 | Agent harness | **TrueForge** (`npx @truefoundry/trueforge`) | MIT, local SQLite |
+| Public demo host | **[Render](https://render.com)** free web service | Blueprint in `render.yaml` |
 | Broker search | Fixtures via Undox MCP | Reliable on stage |
 | Opt-out submit | **Mock** | Live POST intentionally disabled for hackathon video |
 | Code review | **[Qodo](https://github.com/marketplace/qodo-merge-pro)** | Best Code Quality eligibility |
@@ -98,17 +101,14 @@ npm run demo:approval-gate
 npm run demo:multi-broker
 ```
 
-### Deploy your own (Fly.io)
+### Deploy your own (Render — free)
 
-```bash
-fly auth login
-fly apps create undox-demo   # if needed
-fly volumes create undox_data --region iad --size 1
-fly secrets set UNDOX_MCP_TOKEN=… UNDOX_PUBLIC_URL=https://undox-demo.fly.dev
-fly deploy
-```
+1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → connect this repo.
+2. Render reads [`render.yaml`](render.yaml), creates `undox-demo`, builds Docker, deploys.
+3. Copy `UNDOX_MCP_TOKEN` from Render **Environment** → submission form only (never commit).
+4. Open `https://<your-service>.onrender.com/?session=demo-test-2`.
 
-`Dockerfile` + `fly.toml` ship dashboard, fixtures, and MCP on one `PORT`. Seed session `demo-test-2` is baked in at build.
+Optional backup: [`Dockerfile`](Dockerfile) + [`fly.toml`](fly.toml) for Fly.io.
 
 ## Safety
 
@@ -122,6 +122,7 @@ fly deploy
 - **Primary PR:** https://github.com/manasdutta04/undox/pull/4  
   (`feat: Double-O deepen — multi-broker, sandbox, subagents, resume, UI`)  
   Qodo High/Medium findings resolved before squash merge.
+- **Render deploy:** https://github.com/manasdutta04/undox/pull/8 — Blueprint + public URL fixes; Qodo resolved before merge.
 - **Earlier:** https://github.com/manasdutta04/undox/pull/3 — HTTP MCP + Ollama path; High/Medium fixed.
 - **Earlier:** https://github.com/manasdutta04/undox/pull/1 — Medium env-load bug; resolved.
 - Process: `/agentic_review` on every substantive PR → fix → re-review → squash merge. No direct pushes to `main`.

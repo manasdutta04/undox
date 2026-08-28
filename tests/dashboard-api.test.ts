@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
-import { getDashboardOrEmpty } from "../src/agents/dashboard-api.js";
+import { getDashboardOrEmpty, getSessionDetailOrEmpty } from "../src/agents/dashboard-api.js";
 import { listSessionIds, loadSession, upsertBrokerStatus } from "../src/mcp/undox-tools/session-store.js";
 
 describe("dashboard API", () => {
@@ -51,5 +51,21 @@ describe("dashboard API", () => {
     assert.equal(dash.found, true);
     assert.equal(dash.brokers[0]?.broker, "spokeo");
     assert.ok(dash.riskScore > 0);
+    assert.ok(Array.isArray(dash.milestones));
+  });
+
+  it("returns session detail with PII for approval preview", () => {
+    const dash = getDashboardOrEmpty("dash-1");
+    assert.equal(dash.found, true);
+    const detail = getSessionDetailOrEmpty("dash-1");
+    assert.equal(detail.found, true);
+    assert.equal(detail.person?.name, "Alex Rivera");
+    assert.equal(detail.brokers[0]?.broker, "spokeo");
+  });
+
+  it("returns empty detail when session missing", () => {
+    const detail = getSessionDetailOrEmpty("no-such");
+    assert.equal(detail.found, false);
+    assert.equal(detail.brokers.length, 0);
   });
 });

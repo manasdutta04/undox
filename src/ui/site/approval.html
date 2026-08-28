@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Approval preview — Undox</title>
+  <link rel="stylesheet" href="/site/shared.css" />
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav-brand" href="/">Undox</a>
+    <a href="/" data-nav>Home</a>
+    <a href="/case" data-nav>Case</a>
+    <a href="/brokers" data-nav>Brokers</a>
+    <a href="/approval" data-nav>Approval</a>
+    <a href="/harness" data-nav>Harness</a>
+  </nav>
+  <main class="main">
+    <h1 style="margin:0 0 0.5rem;font-size:1.5rem">Approval gate preview</h1>
+    <p style="color:var(--muted);margin:0 0 1rem">
+      Read-only mirror of what TrueForge shows on <strong>Allow</strong> before <code>submit_opt_out</code> — literal PII + form fields.
+    </p>
+
+    <div class="session-bar">
+      <div>
+        <label for="session-input">Session</label><br />
+        <input id="session-input" autocomplete="off" />
+      </div>
+      <button type="button" class="btn btn-sm" id="session-go">Load</button>
+    </div>
+
+    <div id="panels"></div>
+    <p class="footer-note">Live Allow + kill/resume: see hackathon demo video.</p>
+  </main>
+  <script src="/site/shared.js"></script>
+  <script>
+    const U = window.UndoxSite;
+    const PII_KEYS = ["name", "address", "phone", "dob", "email"];
+
+    function renderKv(obj, keys) {
+      return keys.map((k) => `<dt>${U.escapeHtml(k)}</dt><dd>${U.escapeHtml(obj?.[k] ?? "—")}</dd>`).join("");
+    }
+
+    async function load() {
+      const data = await U.fetchDetail();
+      const root = document.getElementById("panels");
+      if (!data.found) {
+        root.innerHTML = "<p class='empty'>Session not found.</p>";
+        return;
+      }
+
+      root.innerHTML = (data.brokers || []).map((b) => {
+        const sub = b.lastSubmission;
+        if (!sub?.pii) {
+          return `<div class="approval-panel" id="${U.escapeHtml(b.broker)}"><h3>${U.escapeHtml(b.broker)}</h3><p class="empty">No submission payload yet.</p></div>`;
+        }
+        const fields = Object.entries(sub.formFields || {})
+          .map(([k, v]) => `<dt>${U.escapeHtml(k)}</dt><dd>${U.escapeHtml(v)}</dd>`)
+          .join("");
+        return `<div class="approval-panel" id="${U.escapeHtml(b.broker)}">
+          <h3>${U.escapeHtml(b.broker)} · mock submit</h3>
+          <p style="font-size:0.85rem;color:var(--muted);margin:0 0 1rem">Mode: ${U.escapeHtml(sub.mode)} · prepare: ${U.escapeHtml(sub.prepareRuntime || "—")}</p>
+          <h4 style="margin:0 0 0.5rem;font-size:0.8rem;text-transform:uppercase;color:var(--muted)">PII (approval modal)</h4>
+          <dl class="kv">${renderKv(sub.pii, PII_KEYS)}</dl>
+          <h4 style="margin:1rem 0 0.5rem;font-size:0.8rem;text-transform:uppercase;color:var(--muted)">Form fields</h4>
+          <dl class="kv">${fields || "<dd>—</dd>"}</dl>
+        </div>`;
+      }).join("");
+
+      const hash = location.hash.slice(1);
+      if (hash) document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    U.wireSessionBar(load);
+    load();
+  </script>
+</body>
+</html>

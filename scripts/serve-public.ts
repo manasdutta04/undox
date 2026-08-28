@@ -15,9 +15,14 @@ import { existsSync, mkdirSync, readFileSync, copyFileSync, statSync } from "nod
 import { extname, join, normalize, resolve, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Request, Response } from "express";
-import { getDashboardOrEmpty } from "../src/agents/dashboard-api.js";
+import { getDashboardOrEmpty, getSessionDetailOrEmpty } from "../src/agents/dashboard-api.js";
 import { listSessionIds } from "../src/mcp/undox-tools/session-store.js";
 import { createUndoxMcpApp } from "../src/mcp/undox-tools/mcp-http-app.js";
+import {
+  DEFAULT_SESSION,
+  readSiteFile,
+  decodeSessionId,
+} from "./ui-site.js";
 
 const PORT = Number(process.env.PORT ?? process.env.UNDOX_PUBLIC_PORT ?? 8080);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -30,7 +35,6 @@ if (!TOKEN) {
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..");
-const PAGE = resolve(ROOT, "src/ui/dashboard/index.html");
 const FIXTURE_ROOT = resolve(ROOT, "fixtures/demo-brokers");
 const SEED = resolve(ROOT, "deploy/seed-sessions.json");
 const STORE =
@@ -176,11 +180,19 @@ app.get("/api/sessions", (_req, res) => {
   }
 });
 
+app.get("/api/session/:id/detail", (req, res) => {
+  const sessionId = decodeSessionId(req.params.id ?? "");
+  if (!sessionId) {
+    res.status(400).json({ error: "Malformed session id encoding" });
+    return;
+  }
+  res.set("cache-control", "no-store");
+  res.json(getSessionDetailOrEmpty(sessionId));
+});
+
 app.get("/api/session/:id", (req, res) => {
-  let sessionId: string;
-  try {
-    sessionId = decodeURIComponent(req.params.id ?? "");
-  } catch {
+  const sessionId = decodeSessionId(req.params.id ?? "");
+  if (!sessionId) {
     res.status(400).json({ error: "Malformed session id encoding" });
     return;
   }
@@ -188,23 +200,43 @@ app.get("/api/session/:id", (req, res) => {
   res.json(getDashboardOrEmpty(sessionId));
 });
 
+function sendSitePage(res: Response, pathname: string): boolean {
+  const file = readSiteFile(pathname);
+  if (!file) return false;
+  res.set("cache-control", "no-store");
+  res.type(file.contentType).send(file.body);
+  return true;
+}
+
+app.get("/dashboard", (req, res) => {
+  const session = (req.query.session as string | undefined) || DEFAULT_SESSION;
+  res.redirect(302, `/case?session=${encodeURIComponent(session)}`);
+});
+
+app.get("/site/shared.css", (_req, res) => {
+  if (!sendSitePage(res, "/site/shared.css")) res.status(404).end();
+});
+app.get("/site/shared.js", (_req, res) => {
+  if (!sendSitePage(res, "/site/shared.js")) res.status(404).end();
+});
+
+const SITE_ROUTES = ["/", "/index.html", "/case", "/brokers", "/approval", "/harness"] as const;
+for (const route of SITE_ROUTES) {
+  app.get(route, (_req, res) => {
+    if (!sendSitePage(res, route === "/index.html" ? "/" : route)) {
+      res.status(404).type("text").send("Missing site page");
+    }
+  });
+}
+
 app.use("/fixtures", (req, res) => {
   serveFixture(req, res);
 });
 
-app.get(["/", "/index.html"], (_req, res) => {
-  if (!existsSync(PAGE)) {
-    res.status(500).type("text").send("Missing dashboard HTML");
-    return;
-  }
-  res.set("cache-control", "no-store");
-  res.type("html").send(readFileSync(PAGE));
-});
-
 app.listen(PORT, HOST, () => {
   console.error(`Undox public demo on http://${HOST}:${PORT}/`);
-  console.error(`  Dashboard  /?session=demo-test-2`);
-  console.error(`  Fixtures   /fixtures/peoplefind/  /fixtures/clearbook/`);
+  console.error(`  Judge tour /case?session=${DEFAULT_SESSION}`);
+  console.error(`  Fixtures   /fixtures/peoplefind/  /fixtures/clearbook/  /fixtures/spokeo/`);
   console.error(`  MCP        /mcp  (Bearer ${TOKEN ? "required" : "off"})`);
   console.error(`  Health     /healthz`);
 });

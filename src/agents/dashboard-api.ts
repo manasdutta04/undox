@@ -3,7 +3,7 @@
  */
 
 import { buildExposureDashboard } from "./exposure-dashboard.js";
-import type { ExposureDashboard } from "./types.js";
+import type { ExposureDashboard, SessionDetailResponse } from "./types.js";
 import { tryLoadSession } from "../mcp/undox-tools/session-store.js";
 
 export function getDashboardOrEmpty(sessionId: string): ExposureDashboard & { found: boolean } {
@@ -15,9 +15,29 @@ export function getDashboardOrEmpty(sessionId: string): ExposureDashboard & { fo
       riskScore: 0,
       riskLabel: "low",
       brokers: [],
+      milestones: [],
       timeline: [],
       summary: `No session "${sessionId}" yet — run Undox MCP find/prepare/submit first.`,
     };
   }
   return { found: true, ...buildExposureDashboard(state) };
+}
+
+export function getSessionDetailOrEmpty(sessionId: string): SessionDetailResponse {
+  const state = tryLoadSession(sessionId);
+  if (!state) {
+    return { found: false, sessionId, brokers: [] };
+  }
+  return {
+    found: true,
+    sessionId: state.sessionId,
+    person: state.person,
+    brokers: state.brokers.map((b) => ({
+      broker: b.broker,
+      status: b.status,
+      profileUrl: b.listing?.profileUrl,
+      optOutUrl: b.lastSubmission?.optOutUrl,
+      lastSubmission: b.lastSubmission,
+    })),
+  };
 }

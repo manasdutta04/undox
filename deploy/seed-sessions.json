@@ -12,7 +12,7 @@
       {
         "listing": {
           "broker": "spokeo",
-          "profileUrl": "https://www.spokeo.com/alex-rivera/p-fx",
+          "profileUrl": "/fixtures/spokeo/profile.html?name=Alex%20Rivera",
           "matchedName": "Alex Rivera",
           "source": "fixture"
         },
@@ -21,10 +21,10 @@
         "updatedAt": "2026-08-27T15:30:10.985Z",
         "lastSubmission": {
           "broker": "spokeo",
-          "optOutUrl": "https://www.spokeo.com/optout",
+          "optOutUrl": "/fixtures/spokeo/optout.html",
           "listing": {
             "broker": "spokeo",
-            "profileUrl": "https://www.spokeo.com/alex-rivera/p-fx",
+            "profileUrl": "/fixtures/spokeo/profile.html?name=Alex%20Rivera",
             "matchedName": "Alex Rivera",
             "source": "fixture"
           },
@@ -36,7 +36,7 @@
             "email": "alex.rivera.optout@example.com"
           },
           "formFields": {
-            "profile_url": "https://www.spokeo.com/alex-rivera/p-fx",
+            "profile_url": "/fixtures/spokeo/profile.html?name=Alex%20Rivera",
             "email": "alex.rivera.optout@example.com",
             "full_name": "Alex Rivera",
             "address": "123 Maple Ave Austin TX 78701",

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Spokeo opt-out (fixture)</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; background: #f4f6f8; }
+    label { display: block; margin-top: 0.75rem; font-size: 0.9rem; }
+    input { width: 100%; padding: 0.4rem; margin-top: 0.25rem; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; background: #6b2d5c; color: #fff; border: none; cursor: pointer; }
+    .badge { background: #6b2d5c; color: #fff; padding: 0.2rem 0.5rem; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+  <p class="badge">FIXTURE OPT-OUT — Undox mocks the POST</p>
+  <h1>Remove your information</h1>
+  <form onsubmit="event.preventDefault(); document.getElementById('ok').hidden=false;">
+    <label>Profile URL <input name="profile_url" required /></label>
+    <label>Email <input name="email" type="email" required /></label>
+    <label>Full name <input name="full_name" required /></label>
+    <label>Address <input name="address" required /></label>
+    <button type="submit">Submit opt-out</button>
+  </form>
+  <p id="ok" hidden>Request recorded (fixture). Undox uses mock submit only.</p>
+</body>
+</html>

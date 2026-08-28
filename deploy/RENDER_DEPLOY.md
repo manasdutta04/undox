@@ -9,8 +9,10 @@ After [`render.yaml`](../render.yaml) is on `main`:
 5. In Render → **undox-demo** → **Environment**, copy `UNDOX_MCP_TOKEN` → **hackathon submission form only** (never README/git).
 6. Verify:
    - https://undox-demo.onrender.com/healthz
-   - https://undox-demo.onrender.com/?session=demo-test-2
-   - https://undox-demo.onrender.com/fixtures/peoplefind/
+   - https://undox-demo.onrender.com/case?session=demo-test-2 (risk 100, 3 submitted)
+   - https://undox-demo.onrender.com/brokers?session=demo-test-2 (fixture listing links)
+   - https://undox-demo.onrender.com/approval?session=demo-test-2 (PII approval preview)
+   - https://undox-demo.onrender.com/fixtures/spokeo/profile.html?name=Alex%20Rivera
 
 If the name `undox-demo` is taken globally, rename in `render.yaml` and redeploy.
 
@@ -21,7 +23,7 @@ If the name `undox-demo` is taken globally, rename in `render.yaml` and redeploy
 | Field | Value |
 |---|---|
 | Repo | https://github.com/manasdutta04/undox |
-| Live demo | https://undox-demo.onrender.com/?session=demo-test-2 |
+| Live demo | https://undox-demo.onrender.com/case?session=demo-test-2 |
 | MCP (optional) | https://undox-demo.onrender.com/mcp + Bearer token (private) |
 | Video | ~3 min: TrueForge Allow + dashboard + kill/resume |
 | Write-up | README + docs/FIELD_REPORT.md |

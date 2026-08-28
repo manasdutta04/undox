@@ -70,6 +70,26 @@ export interface ExposureDashboard {
     status: ListingStatus;
     profileUrl?: string;
   }>;
+  /** One row per broker — latest meaningful status for compact UI. */
+  milestones: Array<{
+    broker: BrokerId;
+    status: ListingStatus;
+    event: string;
+    at: string;
+  }>;
   timeline: UndoxSessionState["timeline"];
   summary: string;
+}
+
+export interface SessionDetailResponse {
+  found: boolean;
+  sessionId: string;
+  person?: PiiPayload;
+  brokers: Array<{
+    broker: BrokerId;
+    status: ListingStatus;
+    profileUrl?: string;
+    optOutUrl?: string;
+    lastSubmission?: OptOutSubmission;
+  }>;
 }

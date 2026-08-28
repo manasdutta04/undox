@@ -39,16 +39,21 @@ const STORE =
 
 process.env.UNDOX_SESSION_STORE = STORE;
 
-/** Copy seed into runtime store if missing or empty. */
+/** Copy seed into runtime store if missing, empty, or on Render (ephemeral free-tier disk). */
 function ensureSeed(): void {
   mkdirSync(dirname(STORE), { recursive: true });
   if (!existsSync(SEED)) {
     console.error("Missing deploy/seed-sessions.json — run: npm run seed:public");
     process.exit(1);
   }
-  if (!existsSync(STORE) || readFileSync(STORE, "utf8").trim() === "{}") {
+  const onRender = process.env.RENDER === "true";
+  const needsSeed =
+    onRender ||
+    !existsSync(STORE) ||
+    readFileSync(STORE, "utf8").trim() === "{}";
+  if (needsSeed) {
     copyFileSync(SEED, STORE);
-    console.error(`Seeded session store → ${STORE}`);
+    console.error(`Seeded session store → ${STORE}${onRender ? " (Render cold start)" : ""}`);
   }
 }
 

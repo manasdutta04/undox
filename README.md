@@ -9,8 +9,9 @@ Judges can verify the Exposure Dashboard, broker fixtures, and MCP heart without
 
 | What | URL |
 |---|---|
-| **Dashboard** (seeded `demo-test-2`, risk 100 / all submitted) | https://undox-demo.onrender.com/?session=demo-test-2 |
-| Fixtures | https://undox-demo.onrender.com/fixtures/peoplefind/ · [/clearbook/](https://undox-demo.onrender.com/fixtures/clearbook/) |
+| **Judge tour** (start here) | https://undox-demo.onrender.com/case?session=demo-test-2 |
+| Home · Brokers · Approval · Harness | https://undox-demo.onrender.com/ |
+| Fixtures | https://undox-demo.onrender.com/fixtures/peoplefind/ · [/clearbook/](https://undox-demo.onrender.com/fixtures/clearbook/) · [/spokeo/](https://undox-demo.onrender.com/fixtures/spokeo/) |
 | Health | https://undox-demo.onrender.com/healthz |
 | MCP (Bearer) | `https://undox-demo.onrender.com/mcp` |
 
@@ -106,7 +107,7 @@ npm run demo:multi-broker
 1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → connect this repo.
 2. Render reads [`render.yaml`](render.yaml), creates `undox-demo`, builds Docker, deploys.
 3. Copy `UNDOX_MCP_TOKEN` from Render **Environment** → submission form only (never commit).
-4. Open `https://<your-service>.onrender.com/?session=demo-test-2`.
+4. Open `https://<your-service>.onrender.com/case?session=demo-test-2`.
 
 Optional backup: [`Dockerfile`](Dockerfile) + [`fly.toml`](fly.toml) for Fly.io.
 

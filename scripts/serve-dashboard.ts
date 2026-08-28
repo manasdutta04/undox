@@ -1,18 +1,21 @@
 /**
- * Local Exposure Dashboard for Savile Row demos.
- * Run: npm run dashboard:serve → http://127.0.0.1:8793/?session=demo-double-o-1
+ * Local judge site + API for development.
+ * Run: npm run dashboard:serve → http://127.0.0.1:8793/case?session=demo-test-2
  */
 
 import { createServer } from "node:http";
-import { readFileSync, existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getDashboardOrEmpty } from "../src/agents/dashboard-api.js";
+import { getDashboardOrEmpty, getSessionDetailOrEmpty } from "../src/agents/dashboard-api.js";
 import { listSessionIds } from "../src/mcp/undox-tools/session-store.js";
+import {
+  DEFAULT_SESSION,
+  readSiteFile,
+  decodeSessionId,
+} from "./ui-site.js";
 
 const PORT = Number(process.env.UNDOX_DASHBOARD_PORT ?? 8793);
 const HERE = dirname(fileURLToPath(import.meta.url));
-const PAGE = resolve(HERE, "../src/ui/dashboard/index.html");
 
 function json(res: import("node:http").ServerResponse, status: number, data: unknown): void {
   const body = JSON.stringify(data);
@@ -21,6 +24,17 @@ function json(res: import("node:http").ServerResponse, status: number, data: unk
     "cache-control": "no-store",
   });
   res.end(body);
+}
+
+function sendSite(
+  res: import("node:http").ServerResponse,
+  pathname: string,
+): boolean {
+  const file = readSiteFile(pathname);
+  if (!file) return false;
+  res.writeHead(200, { "content-type": file.contentType, "cache-control": "no-store" });
+  res.end(file.body);
+  return true;
 }
 
 createServer((req, res) => {
@@ -43,12 +57,21 @@ createServer((req, res) => {
     return;
   }
 
+  const detailMatch = url.pathname.match(/^\/api\/session\/([^/]+)\/detail$/);
+  if (detailMatch) {
+    const sessionId = decodeSessionId(detailMatch[1]!);
+    if (!sessionId) {
+      json(res, 400, { error: "Malformed session id encoding" });
+      return;
+    }
+    json(res, 200, getSessionDetailOrEmpty(sessionId));
+    return;
+  }
+
   const sessionMatch = url.pathname.match(/^\/api\/session\/([^/]+)$/);
   if (sessionMatch) {
-    let sessionId: string;
-    try {
-      sessionId = decodeURIComponent(sessionMatch[1]!);
-    } catch {
+    const sessionId = decodeSessionId(sessionMatch[1]!);
+    if (!sessionId) {
       json(res, 400, { error: "Malformed session id encoding" });
       return;
     }
@@ -56,22 +79,20 @@ createServer((req, res) => {
     return;
   }
 
-  if (url.pathname === "/" || url.pathname === "/index.html") {
-    if (!existsSync(PAGE)) {
-      res.writeHead(500, { "content-type": "text/plain" });
-      res.end("Missing src/ui/dashboard/index.html");
-      return;
-    }
-    const html = readFileSync(PAGE);
-    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-    res.end(html);
+  if (url.pathname === "/dashboard") {
+    res.writeHead(302, {
+      location: `/case?session=${encodeURIComponent(url.searchParams.get("session") || DEFAULT_SESSION)}`,
+    });
+    res.end();
     return;
   }
+
+  if (sendSite(res, url.pathname)) return;
 
   res.writeHead(404, { "content-type": "text/plain" });
   res.end("Not found");
 }).listen(PORT, "127.0.0.1", () => {
-  console.error(`Undox Exposure Dashboard  http://127.0.0.1:${PORT}/`);
-  console.error(`  ?session=demo-double-o-1`);
-  console.error(`  API /api/session/:id  /api/sessions`);
+  console.error(`Undox judge site  http://127.0.0.1:${PORT}/`);
+  console.error(`  /case?session=${DEFAULT_SESSION}`);
+  console.error(`  API /api/session/:id  /api/session/:id/detail`);
 });

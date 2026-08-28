@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Spokeo profile (fixture)</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; background: #f4f6f8; color: #1a1a1a; }
+    .badge { background: #6b2d5c; color: #fff; padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 600; }
+    a { color: #6b2d5c; }
+  </style>
+</head>
+<body>
+  <p class="badge">FIXTURE PROFILE — maps to real Spokeo opt-out flow in production</p>
+  <h1 id="name">Alex Rivera</h1>
+  <p>Austin, TX · Demo listing for Undox hackathon</p>
+  <p><a href="optout.html">Opt out of this listing</a></p>
+  <script>
+    const q = new URLSearchParams(location.search).get("name");
+    if (q) document.getElementById("name").textContent = q;
+  </script>
+</body>
+</html>

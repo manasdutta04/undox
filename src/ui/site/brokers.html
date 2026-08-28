@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brokers — Undox</title>
+  <link rel="stylesheet" href="/site/shared.css" />
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav-brand" href="/">Undox</a>
+    <a href="/" data-nav>Home</a>
+    <a href="/case" data-nav>Case</a>
+    <a href="/brokers" data-nav>Brokers</a>
+    <a href="/approval" data-nav>Approval</a>
+    <a href="/harness" data-nav>Harness</a>
+  </nav>
+  <main class="main">
+    <h1 style="margin:0 0 0.5rem;font-size:1.5rem">Broker tour</h1>
+    <p style="color:var(--muted);margin:0 0 1.5rem">Fixture listings and opt-out pages — reliable for judges (no live CAPTCHA).</p>
+
+    <div class="session-bar">
+      <div>
+        <label for="session-input">Session</label><br />
+        <input id="session-input" autocomplete="off" />
+      </div>
+      <button type="button" class="btn btn-sm" id="session-go">Load</button>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div id="panel"></div>
+  </main>
+  <script src="/site/shared.js"></script>
+  <script>
+    const U = window.UndoxSite;
+    const STEPS = ["found", "prepared", "awaiting_approval", "submitted"];
+    let detail = null;
+    let active = "spokeo";
+    let loadSeq = 0;
+
+    function pipeline(status) {
+      const idx = STEPS.indexOf(status);
+      return STEPS.map((s, i) => {
+        let cls = "";
+        if (i < idx || status === "submitted" && s !== "submitted" && i <= idx) cls = "done";
+        else if (s === status || (status === "submitted" && s === "submitted")) cls = "current";
+        else if (i === idx) cls = "current";
+        if (status === "submitted") {
+          cls = i <= STEPS.indexOf("submitted") ? (s === "submitted" ? "current" : "done") : "";
+        }
+        return `<span class="${cls}">${s.replace(/_/g, " ")}</span>`;
+      }).join("");
+    }
+
+    function renderPanel() {
+      const b = (detail?.brokers || []).find((x) => x.broker === active);
+      const panel = document.getElementById("panel");
+      if (!b) {
+        panel.innerHTML = "<p class='empty'>No broker data for this session.</p>";
+        return;
+      }
+      const listing = U.resolveUrl(b.profileUrl);
+      const optout = U.resolveUrl(b.optOutUrl);
+      panel.innerHTML = `
+        <div class="card">
+          <h3>${U.escapeHtml(b.broker)} ${U.statusBadge(b.status)}</h3>
+          <div class="pipeline">${pipeline(b.status)}</div>
+          <p style="margin:1rem 0">
+            ${listing ? `<a class="btn" href="${U.escapeHtml(listing)}" target="_blank" rel="noopener">Open listing (fixture)</a>` : ""}
+            ${optout ? `<a class="btn btn-outline" href="${U.escapeHtml(optout)}" target="_blank" rel="noopener">Open opt-out form</a>` : ""}
+            <a class="btn btn-outline" href="${U.withSession("/approval")}#${U.escapeHtml(b.broker)}">Approval payload</a>
+          </p>
+        </div>`;
+    }
+
+    function renderTabs() {
+      const brokers = detail?.brokers || [];
+      document.getElementById("tabs").innerHTML = brokers.map((b) =>
+        `<button type="button" class="tab${b.broker === active ? " active" : ""}" data-broker="${U.escapeHtml(b.broker)}">${U.escapeHtml(b.broker)}</button>`,
+      ).join("");
+      document.querySelectorAll(".tab").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          active = btn.dataset.broker;
+          renderTabs();
+          renderPanel();
+        });
+      });
+      renderPanel();
+    }
+
+    async function load() {
+      const id = U.sessionFromUrl();
+      const seq = ++loadSeq;
+      detail = await U.fetchDetail();
+      if (seq !== loadSeq || id !== U.sessionFromUrl()) return;
+      if (!detail.found) {
+        document.getElementById("panel").innerHTML = "<p class='empty'>" + U.escapeHtml(detail.sessionId) + " not found.</p>";
+        return;
+      }
+      if (!detail.brokers.some((b) => b.broker === active)) {
+        active = detail.brokers[0]?.broker || "spokeo";
+      }
+      renderTabs();
+    }
+
+    U.wireSessionBar(load);
+    load();
+  </script>
+</body>
+</html>

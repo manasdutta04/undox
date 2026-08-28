@@ -2,7 +2,26 @@
  * Exposure dashboard helper — Generative UI / resume beat payload.
  */
 
-import type { ExposureDashboard, UndoxSessionState } from "./types.js";
+import type { ExposureDashboard, UndoxSessionState, BrokerId } from "./types.js";
+
+function buildMilestones(state: UndoxSessionState): ExposureDashboard["milestones"] {
+  const order: BrokerId[] = ["spokeo", "peoplefind", "clearbook"];
+  const byBroker = new Map(state.brokers.map((b) => [b.broker, b]));
+
+  return order
+    .filter((id) => byBroker.has(id))
+    .map((broker) => {
+      const b = byBroker.get(broker)!;
+      const events = state.timeline.filter((e) => e.detail === broker);
+      const latest = events[events.length - 1];
+      return {
+        broker,
+        status: b.status,
+        event: latest?.event ?? `broker.${b.status}`,
+        at: latest?.at ?? b.updatedAt,
+      };
+    });
+}
 
 export function buildExposureDashboard(state: UndoxSessionState): ExposureDashboard {
   const open = state.brokers.filter((b) =>
@@ -22,7 +41,8 @@ export function buildExposureDashboard(state: UndoxSessionState): ExposureDashbo
       status: b.status,
       profileUrl: b.listing?.profileUrl,
     })),
-    timeline: state.timeline.slice(-12),
+    milestones: buildMilestones(state),
+    timeline: state.timeline.slice(-6).reverse(),
     summary: `${state.brokers.length} broker(s) tracked · risk ${riskLabel} (${riskScore}) · session ${state.sessionId}`,
   };
 }

@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { DEFAULT_SESSION } from "@/lib/nav";
+import { ArrowRight } from "lucide-react";
+import { DEFAULT_SESSION, withSession } from "@/lib/nav";
+import { DecorBloom } from "@/components/DecorBloom";
 
 export default function AppOverviewPage() {
-  const q = `?session=${encodeURIComponent(DEFAULT_SESSION)}`;
+  const exposureHref = withSession("/app/exposure", DEFAULT_SESSION);
+  const connectHref = withSession("/app/connect", DEFAULT_SESSION);
 
   return (
     <>
@@ -10,45 +13,31 @@ export default function AppOverviewPage() {
         <p className="eyebrow">Workspace</p>
         <h1 className="page-title">Exposure dashboard</h1>
         <p className="page-lede">
-          Session-backed broker statuses, fixture listings, and approval payloads — the same store Undox MCP
-          reads via <code>get_exposure_dashboard</code>.
+          Session-backed broker statuses and approval payloads — the same store Undox MCP reads via{" "}
+          <code>get_exposure_dashboard</code>. Use the nav above to move between sections.
         </p>
       </div>
 
-      <div className="verify-strip" style={{ marginBottom: 24 }}>
-        <span>1 · Exposure</span>
-        <span className="sep">→</span>
-        <span>2 · Brokers</span>
-        <span className="sep">→</span>
-        <span>3 · Approval</span>
-        <span className="sep">→</span>
-        <span>4 · Connect</span>
-      </div>
-
-      <div className="route-cards">
-        <Link className="route-card" href={`/app/exposure${q}`}>
-          <strong>Exposure</strong>
-          <span>Risk score, broker cards, milestones, and event log for the active session.</span>
-        </Link>
-        <Link className="route-card" href={`/app/brokers${q}`}>
-          <strong>Brokers</strong>
-          <span>Per-broker pipeline, fixture listing links, and opt-out form URLs.</span>
-        </Link>
-        <Link className="route-card" href={`/app/approval${q}`}>
-          <strong>Approval</strong>
-          <span>Read-only mirror of literal PII and form fields before Allow on submit.</span>
-        </Link>
-      </div>
-
-      <div className="route-cards" style={{ marginTop: 14, gridTemplateColumns: "1fr 1fr" }}>
-        <Link className="route-card" href={`/app/architecture${q}`}>
-          <strong>Architecture</strong>
-          <span>TrueForge primitives — MCP flow, sandbox skills, approval gate.</span>
-        </Link>
-        <Link className="route-card" href={`/app/connect${q}`}>
-          <strong>Connect MCP</strong>
-          <span>One-click TrueForge connector — paste-ready, public demo Bearer.</span>
-        </Link>
+      <div className="panel panel-session">
+        <DecorBloom className="bloom-corner bloom-tl" variant="yellow" size={56} />
+        <DecorBloom className="bloom-corner bloom-br" variant="green" size={44} />
+        <p className="eyebrow" style={{ marginBottom: 8 }}>
+          Seeded session
+        </p>
+        <p className="session-id">
+          <code>{DEFAULT_SESSION}</code>
+        </p>
+        <p className="page-lede" style={{ marginTop: 12, maxWidth: 480 }}>
+          Fixture identity only. Dashboard and MCP share one session store — chat is not authoritative.
+        </p>
+        <div className="cta-row" style={{ marginTop: 24 }}>
+          <Link href={exposureHref} className="btn">
+            Open Exposure <ArrowRight size={16} />
+          </Link>
+          <Link href={connectHref} className="btn btn-outline">
+            Connect MCP
+          </Link>
+        </div>
       </div>
     </>
   );

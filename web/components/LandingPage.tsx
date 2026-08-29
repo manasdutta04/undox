@@ -3,6 +3,7 @@ import { ArrowRight, Github } from "lucide-react";
 import { DEFAULT_SESSION, GITHUB_REPO, withSession } from "@/lib/nav";
 import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
+import { DecorBloom } from "./DecorBloom";
 
 export function LandingPage() {
   const exposureHref = withSession("/app/exposure", DEFAULT_SESSION);
@@ -16,6 +17,8 @@ export function LandingPage() {
 
       <section className="landing-section landing-hero">
         <div className="panel">
+          <DecorBloom className="bloom-hero-tr" variant="yellow" size={64} />
+          <DecorBloom className="bloom-hero-br" variant="green" size={40} />
           <div className="stamp-row">
             <span className="stamp">Mock · Demo</span>
             <span className="stamp stamp-alt">Human Allow</span>

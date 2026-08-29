@@ -1,21 +1,15 @@
 /**
- * Local judge site + API for development.
- * Run: npm run dashboard:serve → http://127.0.0.1:8793/case?session=demo-test-2
+ * Local session API for development (UI: cd web && npm run dev).
+ * Run: npm run dashboard:serve → http://127.0.0.1:8793/api/sessions
  */
 
 import { createServer } from "node:http";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { getDashboardOrEmpty, getSessionDetailOrEmpty } from "../src/agents/dashboard-api.js";
 import { listSessionIds } from "../src/mcp/undox-tools/session-store.js";
-import {
-  DEFAULT_SESSION,
-  readSiteFile,
-  decodeSessionId,
-} from "./ui-site.js";
+import { decodeSessionId, parseCorsOrigins, publicDetailIncludesPii } from "./ui-site.js";
 
 const PORT = Number(process.env.UNDOX_DASHBOARD_PORT ?? 8793);
-const HERE = dirname(fileURLToPath(import.meta.url));
+const CORS_ORIGINS = parseCorsOrigins();
 
 function json(res: import("node:http").ServerResponse, status: number, data: unknown): void {
   const body = JSON.stringify(data);
@@ -26,18 +20,25 @@ function json(res: import("node:http").ServerResponse, status: number, data: unk
   res.end(body);
 }
 
-function sendSite(
-  res: import("node:http").ServerResponse,
-  pathname: string,
-): boolean {
-  const file = readSiteFile(pathname);
-  if (!file) return false;
-  res.writeHead(200, { "content-type": file.contentType, "cache-control": "no-store" });
-  res.end(file.body);
-  return true;
+function applyCors(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse): boolean {
+  const origin = req.headers.origin;
+  if (origin && CORS_ORIGINS.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  }
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return true;
+  }
+  return false;
 }
 
 createServer((req, res) => {
+  if (applyCors(req, res)) return;
+
   const raw = req.url ?? "/";
   let url: URL;
   try {
@@ -64,7 +65,9 @@ createServer((req, res) => {
       json(res, 400, { error: "Malformed session id encoding" });
       return;
     }
-    json(res, 200, getSessionDetailOrEmpty(sessionId));
+    json(res, 200, getSessionDetailOrEmpty(sessionId, {
+      includePii: publicDetailIncludesPii(sessionId),
+    }));
     return;
   }
 
@@ -79,20 +82,9 @@ createServer((req, res) => {
     return;
   }
 
-  if (url.pathname === "/dashboard") {
-    res.writeHead(302, {
-      location: `/case?session=${encodeURIComponent(url.searchParams.get("session") || DEFAULT_SESSION)}`,
-    });
-    res.end();
-    return;
-  }
-
-  if (sendSite(res, url.pathname)) return;
-
   res.writeHead(404, { "content-type": "text/plain" });
-  res.end("Not found");
+  res.end("API only — run Next UI: cd web && npm run dev");
 }).listen(PORT, "127.0.0.1", () => {
-  console.error(`Undox judge site  http://127.0.0.1:${PORT}/`);
-  console.error(`  /case?session=${DEFAULT_SESSION}`);
-  console.error(`  API /api/session/:id  /api/session/:id/detail`);
+  console.error(`Undox local API  http://127.0.0.1:${PORT}/api/sessions`);
+  console.error(`  Next UI: cd web && NEXT_PUBLIC_UNDOX_API_URL=http://127.0.0.1:${PORT} npm run dev`);
 });

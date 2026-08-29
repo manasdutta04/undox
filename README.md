@@ -1,27 +1,31 @@
 # Undox
 
+[![Live demo](https://img.shields.io/badge/Live_demo-Vercel-000?style=for-the-badge)](https://undox-demo.vercel.app/app?session=demo-test-2)
+[![GitHub](https://img.shields.io/badge/GitHub-undox-181717?style=for-the-badge&logo=github)](https://github.com/manasdutta04/undox)
+[![CI](https://img.shields.io/github/actions/workflow/status/manasdutta04/undox/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/manasdutta04/undox/actions)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+
 TrueForge agent that finds data-broker sites leaking a person's PII and drives
 opt-outs — with **human approval before every submission**.
 
 ## Live demo (no clone required)
 
-Judges can verify the Exposure Dashboard, broker fixtures, and MCP heart without local setup:
-
 | What | URL |
 |---|---|
-| **Judge tour** (start here) | https://undox-demo.onrender.com/case?session=demo-test-2 |
-| Home · Brokers · Approval · Harness | https://undox-demo.onrender.com/ |
+| **App** (start here) | https://undox-demo.vercel.app/app?session=demo-test-2 |
+| Landing | https://undox-demo.vercel.app/ |
+| API · fixtures · MCP | https://undox-demo.onrender.com |
 | Fixtures | https://undox-demo.onrender.com/fixtures/peoplefind/ · [/clearbook/](https://undox-demo.onrender.com/fixtures/clearbook/) · [/spokeo/](https://undox-demo.onrender.com/fixtures/spokeo/) |
 | Health | https://undox-demo.onrender.com/healthz |
 | MCP (Bearer) | `https://undox-demo.onrender.com/mcp` |
 
-> **Free Render tier:** the service sleeps after ~15 min idle; **first load may take up to ~1 minute**. Optional keep-warm: ping `/healthz` every 10 min with [UptimeRobot](https://uptimerobot.com) (free).
+> **Render free tier:** the API sleeps after ~15 min idle; **first load may take up to ~1 minute**. Optional keep-warm: ping `/healthz` every 10 min with [UptimeRobot](https://uptimerobot.com) (free). Set `UNDOX_CORS_ORIGINS` on Render to your Vercel URL — see [`docs/WEB_DEPLOY.md`](./docs/WEB_DEPLOY.md).
 
-MCP requires a Bearer token (`UNDOX_MCP_TOKEN`). Judges verifying dashboard/fixtures do **not** need it; the token is shared only via the private submission form (rotate after hackathon). Do not publish the live token in the repo.
+MCP requires a Bearer token (`UNDOX_MCP_TOKEN`). Dashboard/fixture verification does **not** need it; rotate tokens if shared outside your team. Do not publish live tokens in the repo.
 
-**Approval gate + kill/resume** need the ~3‑minute dual-pane video (TrueForge Allow on literal PII). Hosting TrueForge + Ollama publicly is out of scope this week.
+**Approval gate + kill/resume** are demonstrated in the project video (TrueForge Allow on literal PII). Hosting TrueForge + Ollama publicly is out of scope for the free demo stack.
 
-> Field report: [`docs/FIELD_REPORT.md`](./docs/FIELD_REPORT.md) · Shipping process: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
+> Field report: [`docs/FIELD_REPORT.md`](./docs/FIELD_REPORT.md) · Web deploy: [`docs/WEB_DEPLOY.md`](./docs/WEB_DEPLOY.md) · Shipping process: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
 
 **Status:** Double-O harness demo — multi-broker MCP (Spokeo + 2 fixtures), sandbox prepare scripts, `dynamicSubAgents` + parallel tool fan-out, approval gate, session resume, Exposure Dashboard. **Source of truth = tool JSON + dashboard, not chat prose.**
 
@@ -34,11 +38,11 @@ MCP requires a Bearer token (`UNDOX_MCP_TOKEN`). Judges verifying dashboard/fixt
 | **Approval** | `submit_opt_out` and `run_spokeo_opt_out` require human Allow on **literal** PII |
 | **Subagents** | `config.dynamicSubAgents.enabled`; worker instruction contracts in `src/agents/*-subagent.ts`. Fallback = parallel MCP tool fan-out |
 | **Sessions** | File store keyed by `session_id` — kill TrueForge, keep MCP, statuses remain |
-| **Status UI** | Public `/` dashboard (or local `:8793`); same session store as MCP |
+| **Status UI** | Next.js app on Vercel (`web/`) + `/api/session/:id` on Render; same session store as MCP |
 
 ### Architecture (short)
 
-One public Node process (`scripts/serve-public.ts`) serves dashboard + `/api/session/:id` + `/fixtures/*` + `/mcp`. TrueForge (local) talks to MCP over HTTP with Bearer auth. Prepare runs sandbox scripts; submit is mock on stage. Dashboard reads the same JSON session store — chat is not authoritative.
+**Vercel** serves the landing page and `/app/*` workspace. **Render** (`scripts/serve-public.ts`) serves `/api/*`, `/fixtures/*`, and `/mcp`. TrueForge (local) talks to MCP over HTTP with Bearer auth. Prepare runs sandbox scripts; submit is mock on stage. The dashboard reads the same JSON session store — chat is not authoritative.
 
 ## Brokers
 
@@ -56,9 +60,10 @@ CAPTCHA is flagged to the human (never bypassed). Live POSTs stay off unless you
 |---|---|---|
 | LLM | **[Ollama](https://ollama.com)** local (`gemma4:e2b`) | Need native `tool_calls` |
 | Agent harness | **TrueForge** (`npx @truefoundry/trueforge`) | MIT, local SQLite |
-| Public demo host | **[Render](https://render.com)** free web service | Blueprint in `render.yaml` |
+| Product UI | **[Vercel](https://vercel.com)** (`web/`) | Next.js 15 |
+| Public API host | **[Render](https://render.com)** free web service | Blueprint in `render.yaml` |
 | Broker search | Fixtures via Undox MCP | Reliable on stage |
-| Opt-out submit | **Mock** | Live POST intentionally disabled for hackathon video |
+| Opt-out submit | **Mock** | Live POST intentionally disabled for demo |
 | Code review | **[Qodo](https://github.com/marketplace/qodo-merge-pro)** | Best Code Quality eligibility |
 
 ## Local fallback (clone path)
@@ -73,12 +78,15 @@ npm test && npm run prove:heart
 # WSL — TrueForge
 HOST=0.0.0.0 npx @truefoundry/trueforge@latest --port 8790
 
-# Host — one-shot public stack (or split fixtures/dashboard/MCP)
+# Host — public API stack (fixtures + API + MCP)
 UNDOX_MCP_TOKEN=dev-secret npm run serve:public   # :8080
 
-# Or split:
-npm run fixtures:serve          # :8792
-npm run dashboard:serve         # :8793
+# Next UI (separate terminal)
+cd web && npm install
+NEXT_PUBLIC_UNDOX_API_URL=http://127.0.0.1:8080 npm run dev   # :3000
+
+# Or API-only local helper:
+npm run dashboard:serve         # :8793 (API only)
 UNDOX_MCP_HOST=0.0.0.0 UNDOX_MCP_TOKEN=dev-secret npm run mcp:undox-tools:http
 ```
 
@@ -102,12 +110,17 @@ npm run demo:approval-gate
 npm run demo:multi-broker
 ```
 
-### Deploy your own (Render — free)
+### Deploy your own
+
+**UI (Vercel):** root directory `web`, set `NEXT_PUBLIC_UNDOX_API_URL` — see [`docs/WEB_DEPLOY.md`](./docs/WEB_DEPLOY.md).
+
+**API (Render — free):**
 
 1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → connect this repo.
 2. Render reads [`render.yaml`](render.yaml), creates `undox-demo`, builds Docker, deploys.
-3. Copy `UNDOX_MCP_TOKEN` from Render **Environment** → submission form only (never commit).
-4. Open `https://<your-service>.onrender.com/case?session=demo-test-2`.
+3. Set `UNDOX_WEB_URL` and `UNDOX_CORS_ORIGINS` to your Vercel URL.
+4. Copy `UNDOX_MCP_TOKEN` from Render **Environment** — share only via private channels (never commit).
+5. Open `https://<your-vercel-app>/app?session=demo-test-2`.
 
 Optional backup: [`Dockerfile`](Dockerfile) + [`fly.toml`](fly.toml) for Fly.io.
 

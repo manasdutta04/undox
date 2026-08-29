@@ -1,33 +1,35 @@
 /**
- * One-process public deploy: Exposure Dashboard + fixture brokers + MCP HTTP.
+ * One-process public deploy: API + fixture brokers + MCP HTTP.
  *
  *   PORT=8080 UNDOX_MCP_TOKEN=… npm run serve:public
  *
  * Paths:
- *   /                     dashboard UI
- *   /api/session/:id      dashboard API
- *   /fixtures/...         PeopleFind / Clearbook HTML
+ *   /api/*                session dashboard API
+ *   /fixtures/...         PeopleFind / Clearbook / Spokeo HTML
  *   /mcp                  Undox MCP (Bearer required when token set)
  *   /healthz              liveness
+ *   /                     optional redirect to UNDOX_WEB_URL (Vercel UI)
  */
 
 import { existsSync, mkdirSync, readFileSync, copyFileSync, statSync } from "node:fs";
 import { extname, join, normalize, resolve, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { getDashboardOrEmpty, getSessionDetailOrEmpty } from "../src/agents/dashboard-api.js";
 import { listSessionIds } from "../src/mcp/undox-tools/session-store.js";
 import { createUndoxMcpApp } from "../src/mcp/undox-tools/mcp-http-app.js";
 import {
   DEFAULT_SESSION,
-  readSiteFile,
   decodeSessionId,
   publicDetailIncludesPii,
+  parseCorsOrigins,
 } from "./ui-site.js";
 
 const PORT = Number(process.env.PORT ?? process.env.UNDOX_PUBLIC_PORT ?? 8080);
 const HOST = process.env.HOST ?? "0.0.0.0";
 const TOKEN = process.env.UNDOX_MCP_TOKEN?.trim() || "";
+const WEB_URL = process.env.UNDOX_WEB_URL?.trim().replace(/\/$/, "") || "https://undox-demo.vercel.app";
+const CORS_ORIGINS = parseCorsOrigins();
 
 if (!TOKEN) {
   console.error("UNDOX_MCP_TOKEN is required for serve:public (non-loopback MCP).");
@@ -84,7 +86,6 @@ function isSafeFile(target: string): boolean {
 }
 
 function serveFixture(req: Request, res: Response): void {
-  // Mounted at /fixtures — Express gives path relative to mount (e.g. /peoplefind/)
   const rawUrl = req.url ?? "/";
   const qIdx = rawUrl.indexOf("?");
   const pathOnly = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
@@ -125,13 +126,11 @@ function serveFixture(req: Request, res: Response): void {
 
 ensureSeed();
 
-/** Ensure public URL has a scheme (Render host-only values need https://). */
 function normalizePublicUrl(url: string): string {
   const trimmed = url.trim().replace(/\/$/, "");
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-/** Render / Fly public URL when UNDOX_PUBLIC_URL is not set explicitly. */
 function resolvePublicUrl(): string | undefined {
   const explicit = process.env.UNDOX_PUBLIC_URL?.trim();
   if (explicit) return normalizePublicUrl(explicit);
@@ -144,7 +143,6 @@ if (publicUrl && !process.env.UNDOX_PUBLIC_URL) {
   process.env.UNDOX_PUBLIC_URL = publicUrl;
 }
 
-// Public fixture base for MCP prepare tools that mint listing URLs.
 if (!process.env.UNDOX_FIXTURE_BASE_URL) {
   process.env.UNDOX_FIXTURE_BASE_URL = publicUrl
     ? `${publicUrl}/fixtures`
@@ -167,6 +165,23 @@ const app = createUndoxMcpApp({
   token: TOKEN,
   ...(allowedHosts?.length ? { allowedHosts } : {}),
 });
+
+function corsMiddleware(req: Request, res: Response, next: NextFunction): void {
+  const origin = req.headers.origin;
+  if (origin && CORS_ORIGINS.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  }
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+  next();
+}
+
+app.use(corsMiddleware);
 
 app.get("/healthz", (_req, res) => {
   res.json({ ok: true, service: "undox-public" });
@@ -203,32 +218,27 @@ app.get("/api/session/:id", (req, res) => {
   res.json(getDashboardOrEmpty(sessionId));
 });
 
-function sendSitePage(res: Response, pathname: string): boolean {
-  const file = readSiteFile(pathname);
-  if (!file) return false;
-  res.set("cache-control", "no-store");
-  res.type(file.contentType).send(file.body);
-  return true;
-}
+app.get("/", (_req, res) => {
+  res.redirect(302, `${WEB_URL}/app?session=${encodeURIComponent(DEFAULT_SESSION)}`);
+});
 
 app.get("/dashboard", (req, res) => {
   const session = (req.query.session as string | undefined) || DEFAULT_SESSION;
-  res.redirect(302, `/case?session=${encodeURIComponent(session)}`);
+  res.redirect(302, `${WEB_URL}/app/exposure?session=${encodeURIComponent(session)}`);
 });
 
-app.get("/site/shared.css", (_req, res) => {
-  if (!sendSitePage(res, "/site/shared.css")) res.status(404).end();
-});
-app.get("/site/shared.js", (_req, res) => {
-  if (!sendSitePage(res, "/site/shared.js")) res.status(404).end();
-});
-
-const SITE_ROUTES = ["/", "/index.html", "/case", "/brokers", "/approval", "/harness"] as const;
-for (const route of SITE_ROUTES) {
-  app.get(route, (_req, res) => {
-    if (!sendSitePage(res, route === "/index.html" ? "/" : route)) {
-      res.status(404).type("text").send("Missing site page");
-    }
+/** Legacy static routes → Vercel app paths */
+const LEGACY_REDIRECTS: Record<string, string> = {
+  "/case": "/app/exposure",
+  "/brokers": "/app/brokers",
+  "/approval": "/app/approval",
+  "/harness": "/app/architecture",
+  "/index.html": "/app",
+};
+for (const [from, to] of Object.entries(LEGACY_REDIRECTS)) {
+  app.get(from, (req, res) => {
+    const session = (req.query.session as string | undefined) || DEFAULT_SESSION;
+    res.redirect(302, `${WEB_URL}${to}?session=${encodeURIComponent(session)}`);
   });
 }
 
@@ -237,9 +247,10 @@ app.use("/fixtures", (req, res) => {
 });
 
 app.listen(PORT, HOST, () => {
-  console.error(`Undox public demo on http://${HOST}:${PORT}/`);
-  console.error(`  Judge tour /case?session=${DEFAULT_SESSION}`);
+  console.error(`Undox public API on http://${HOST}:${PORT}/`);
+  console.error(`  Web UI     ${WEB_URL}/app?session=${DEFAULT_SESSION}`);
   console.error(`  Fixtures   /fixtures/peoplefind/  /fixtures/clearbook/  /fixtures/spokeo/`);
   console.error(`  MCP        /mcp  (Bearer ${TOKEN ? "required" : "off"})`);
   console.error(`  Health     /healthz`);
+  console.error(`  CORS       ${[...CORS_ORIGINS].join(", ")}`);
 });

@@ -137,7 +137,7 @@ pre {
   overflow: hidden;
 }
 
-.panel-session > :not(.decor-bloom) {
+.panel-session > :not(.decor-motif):not(.decor-bloom) {
   position: relative;
   z-index: 1;
 }
@@ -157,7 +157,8 @@ pre {
   box-shadow: var(--shadow-sm);
 }
 
-/* Flat bloom accents */
+/* Flat motif accents */
+.decor-motif,
 .decor-bloom {
   display: block;
   flex-shrink: 0;
@@ -198,15 +199,124 @@ pre {
   z-index: 1;
 }
 
+.motif-hero-ml {
+  position: absolute;
+  top: 96px;
+  left: 18px;
+  transform: rotate(-20deg);
+  z-index: 1;
+  opacity: 0.9;
+}
+
 .bloom-inline {
   display: inline-block;
   vertical-align: middle;
   margin-left: 8px;
 }
 
-.landing-hero .panel > :not(.decor-bloom) {
+.landing-hero .panel > :not(.decor-motif):not(.decor-bloom) {
   position: relative;
   z-index: 1;
+}
+
+.motif-scatter {
+  width: min(var(--content-max), calc(100% - 2 * var(--page-gutter)));
+  margin: 20px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 4vw, 40px);
+  flex-wrap: wrap;
+}
+
+.motif-scatter .decor-motif:nth-child(odd) {
+  transform: rotate(-12deg);
+}
+
+.motif-scatter .decor-motif:nth-child(even) {
+  transform: rotate(10deg);
+}
+
+.landing-section-decor,
+.page-hero-decor {
+  position: relative;
+}
+
+.motif-float {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.motif-float-tr {
+  top: 8px;
+  right: 0;
+  transform: rotate(14deg);
+}
+
+.motif-float-br {
+  bottom: 0;
+  right: 48px;
+  transform: rotate(-16deg);
+}
+
+.feature-card-decor {
+  position: relative;
+  overflow: hidden;
+}
+
+.motif-card {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  opacity: 0.85;
+  transform: rotate(8deg);
+}
+
+.cta-band-inner {
+  position: relative;
+}
+
+.motif-cta-l,
+.motif-cta-r {
+  position: absolute;
+  z-index: 0;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.motif-cta-l {
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-12deg);
+}
+
+.motif-cta-r {
+  right: -4px;
+  top: 20%;
+  transform: rotate(16deg);
+}
+
+.cta-band-inner > :not(.decor-motif) {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 720px) {
+  .motif-hero-ml,
+  .motif-cta-l,
+  .motif-cta-r,
+  .motif-float-br {
+    display: none;
+  }
+
+  .motif-scatter {
+    gap: 12px;
+  }
+
+  .motif-scatter .decor-motif:nth-child(n + 4) {
+    display: none;
+  }
 }
 
 .steps {

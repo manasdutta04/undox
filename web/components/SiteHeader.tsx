@@ -20,7 +20,6 @@ export function SiteHeader({
   const pathname = usePathname();
   const sid = session ?? DEFAULT_SESSION;
   const appHref = withSession("/app", sid);
-  const connectHref = withSession("/app/connect", sid);
 
   return (
     <header className="site-nav">
@@ -78,8 +77,8 @@ export function SiteHeader({
               Open app
             </Link>
           ) : (
-            <Link href={connectHref} className="btn">
-              Connect
+            <Link href={withSession("/app/exposure", sid)} className="btn">
+              Open demo
             </Link>
           )}
         </div>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { DEFAULT_SESSION, withSession } from "@/lib/nav";
-import { DecorBloom } from "@/components/DecorBloom";
+import { DecorMotif } from "@/components/DecorBloom";
 
 export default function AppOverviewPage() {
   const exposureHref = withSession("/app/exposure", DEFAULT_SESSION);
@@ -9,7 +9,9 @@ export default function AppOverviewPage() {
 
   return (
     <>
-      <div className="page-hero">
+      <div className="page-hero page-hero-decor">
+        <DecorMotif className="motif-float motif-float-tr" kind="star" variant="yellow" size={40} />
+        <DecorMotif className="motif-float motif-float-br" kind="leaf" variant="green" size={36} />
         <p className="eyebrow">Workspace</p>
         <h1 className="page-title">Exposure dashboard</h1>
         <p className="page-lede">
@@ -19,8 +21,8 @@ export default function AppOverviewPage() {
       </div>
 
       <div className="panel panel-session">
-        <DecorBloom className="bloom-corner bloom-tl" variant="yellow" size={56} />
-        <DecorBloom className="bloom-corner bloom-br" variant="green" size={44} />
+        <DecorMotif className="bloom-corner bloom-tl" kind="bloom" variant="yellow" size={56} />
+        <DecorMotif className="bloom-corner bloom-br" kind="spark" variant="green" size={44} />
         <p className="eyebrow" style={{ marginBottom: 8 }}>
           Seeded session
         </p>

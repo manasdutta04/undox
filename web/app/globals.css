@@ -45,7 +45,8 @@ body.undox {
   background-size: 22px 22px;
 }
 
-body.undox a {
+/* Low specificity so .btn / .sign-in / .nav-link can set their own colors */
+a {
   color: inherit;
   text-decoration: none;
 }

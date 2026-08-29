@@ -87,9 +87,12 @@ export function ConnectView() {
 {`# API + fixtures + MCP
 UNDOX_MCP_TOKEN=dev-secret npm run serve:public
 
-# UI
-cd web && npm run dev
-# optional: NEXT_PUBLIC_UNDOX_USE_DIRECT_API=1 NEXT_PUBLIC_UNDOX_API_URL=http://127.0.0.1:8080`}
+# UI (rewrites /backend → local API)
+cd web
+UNDOX_API_URL=http://127.0.0.1:8080 npm run dev
+
+# Or hit the API directly from the browser:
+# NEXT_PUBLIC_UNDOX_USE_DIRECT_API=1 NEXT_PUBLIC_UNDOX_API_URL=http://127.0.0.1:8080 npm run dev`}
         </pre>
       </div>
     </>

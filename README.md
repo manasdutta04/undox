@@ -1,6 +1,6 @@
 # Undox
 
-[![Live demo](https://img.shields.io/badge/Live_demo-Vercel-000?style=for-the-badge)](https://undox-demo.vercel.app/app?session=demo-test-2)
+[![Live demo](https://img.shields.io/badge/Live_demo-Vercel-000?style=for-the-badge)](https://undox.vercel.app/app?session=demo-test-2)
 [![GitHub](https://img.shields.io/badge/GitHub-undox-181717?style=for-the-badge&logo=github)](https://github.com/manasdutta04/undox)
 [![CI](https://img.shields.io/github/actions/workflow/status/manasdutta04/undox/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/manasdutta04/undox/actions)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
@@ -12,17 +12,17 @@ opt-outs — with **human approval before every submission**.
 
 | What | URL |
 |---|---|
-| **App** (start here) | https://undox-demo.vercel.app/app?session=demo-test-2 |
-| Landing | https://undox-demo.vercel.app/ |
-| **Connect MCP** (TrueForge) | https://undox-demo.vercel.app/app/connect |
+| **App** (start here) | https://undox.vercel.app/app?session=demo-test-2 |
+| Landing | https://undox.vercel.app/ |
+| **Connect MCP** (TrueForge) | https://undox.vercel.app/app/connect |
 | API · fixtures · MCP | https://undox-demo.onrender.com |
 | Fixtures | https://undox-demo.onrender.com/fixtures/peoplefind/ · [/clearbook/](https://undox-demo.onrender.com/fixtures/clearbook/) · [/spokeo/](https://undox-demo.onrender.com/fixtures/spokeo/) |
 | Health | https://undox-demo.onrender.com/healthz |
-| MCP (Bearer) | `https://undox-demo.onrender.com/mcp` |
+| MCP (Bearer) | `https://undox-demo.onrender.com/mcp` — demo token `undox-demo-public` (paste-ready on Connect) |
 
-> **Render free tier:** the API sleeps after ~15 min idle; **first load may take up to ~1 minute**. Optional keep-warm: ping `/healthz` every 10 min with [UptimeRobot](https://uptimerobot.com) (free). Set `UNDOX_CORS_ORIGINS` on Render to your Vercel URL — see [`docs/WEB_DEPLOY.md`](./docs/WEB_DEPLOY.md).
+> **Render free tier:** the API sleeps after ~15 min idle; **first load may take up to ~1 minute**. Optional keep-warm: ping `/healthz` every 10 min with [UptimeRobot](https://uptimerobot.com) (free). See [`docs/WEB_DEPLOY.md`](./docs/WEB_DEPLOY.md).
 
-MCP requires a Bearer token (`UNDOX_MCP_TOKEN`). Dashboard/fixture verification does **not** need it; rotate tokens if shared outside your team. Do not publish live tokens in the repo.
+**MCP for TrueForge:** open [Connect](https://undox.vercel.app/app/connect) and **Copy MCP config** — includes the public demo Bearer (`undox-demo-public`). Submits stay mock; rotate/remove the demo token after the hackathon. Ops may also set a private `UNDOX_MCP_TOKEN` (not needed for judges).
 
 **Approval gate + kill/resume** are demonstrated in the project video (TrueForge Allow on literal PII). Hosting TrueForge + Ollama publicly is out of scope for the free demo stack.
 
@@ -43,7 +43,7 @@ MCP requires a Bearer token (`UNDOX_MCP_TOKEN`). Dashboard/fixture verification 
 
 ### Architecture (short)
 
-**Vercel** serves the landing page and `/app/*` workspace (light UI; `/backend/*` proxies session API + fixtures). **Render** (`scripts/serve-public.ts`) serves `/api/*`, `/fixtures/*`, and `/mcp`. TrueForge (local) talks to MCP over HTTP with Bearer auth — use in-app **Connect** for the connector JSON. Prepare runs sandbox scripts; submit is mock on stage. The dashboard reads the same JSON session store — chat is not authoritative.
+**Vercel** serves the landing page and `/app/*` workspace (neo-brutal UI; `/backend/*` proxies session API + fixtures). **Render** (`scripts/serve-public.ts`) serves `/api/*`, `/fixtures/*`, and `/mcp`. TrueForge (local) talks to MCP over HTTP — paste the connector from **Connect** (`undox-demo-public`). Prepare runs sandbox scripts; submit is mock on stage. The dashboard reads the same JSON session store — chat is not authoritative.
 
 ## Brokers
 
@@ -80,7 +80,7 @@ npm test && npm run prove:heart
 HOST=0.0.0.0 npx @truefoundry/trueforge@latest --port 8790
 
 # Host — public API stack (fixtures + API + MCP)
-UNDOX_MCP_TOKEN=dev-secret npm run serve:public   # :8080
+UNDOX_MCP_TOKEN=dev-secret UNDOX_MCP_DEMO_TOKEN=undox-demo-public npm run serve:public   # :8080
 
 # Next UI (separate terminal)
 cd web && npm install
@@ -119,9 +119,8 @@ npm run demo:multi-broker
 
 1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → connect this repo.
 2. Render reads [`render.yaml`](render.yaml), creates `undox-demo`, builds Docker, deploys.
-3. Set `UNDOX_WEB_URL` and `UNDOX_CORS_ORIGINS` to your Vercel URL.
-4. Copy `UNDOX_MCP_TOKEN` from Render **Environment** — share only via private channels (never commit).
-5. Open `https://<your-vercel-app>/app?session=demo-test-2`.
+3. Confirm `UNDOX_WEB_URL=https://undox.vercel.app` and `UNDOX_MCP_DEMO_TOKEN=undox-demo-public`.
+4. Open `https://undox.vercel.app/app?session=demo-test-2` and `/app/connect` for MCP.
 
 Optional backup: [`Dockerfile`](Dockerfile) + [`fly.toml`](fly.toml) for Fly.io.
 

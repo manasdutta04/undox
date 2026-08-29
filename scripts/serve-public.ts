@@ -28,11 +28,14 @@ import {
 const PORT = Number(process.env.PORT ?? process.env.UNDOX_PUBLIC_PORT ?? 8080);
 const HOST = process.env.HOST ?? "0.0.0.0";
 const TOKEN = process.env.UNDOX_MCP_TOKEN?.trim() || "";
-const WEB_URL = process.env.UNDOX_WEB_URL?.trim().replace(/\/$/, "") || "https://undox-demo.vercel.app";
+/** Public demo token for Connect page (intentional; rotate after hackathon). */
+const DEMO_TOKEN =
+  process.env.UNDOX_MCP_DEMO_TOKEN?.trim() || "undox-demo-public";
+const WEB_URL = process.env.UNDOX_WEB_URL?.trim().replace(/\/$/, "") || "https://undox.vercel.app";
 const CORS_ORIGINS = parseCorsOrigins();
 
-if (!TOKEN) {
-  console.error("UNDOX_MCP_TOKEN is required for serve:public (non-loopback MCP).");
+if (!TOKEN && !DEMO_TOKEN) {
+  console.error("UNDOX_MCP_TOKEN or UNDOX_MCP_DEMO_TOKEN is required for serve:public.");
   process.exit(1);
 }
 
@@ -163,6 +166,7 @@ const allowedHosts =
 const app = createUndoxMcpApp({
   host: HOST,
   token: TOKEN,
+  extraTokens: DEMO_TOKEN && DEMO_TOKEN !== TOKEN ? [DEMO_TOKEN] : [],
   ...(allowedHosts?.length ? { allowedHosts } : {}),
 });
 
@@ -250,7 +254,7 @@ app.listen(PORT, HOST, () => {
   console.error(`Undox public API on http://${HOST}:${PORT}/`);
   console.error(`  Web UI     ${WEB_URL}/app?session=${DEFAULT_SESSION}`);
   console.error(`  Fixtures   /fixtures/peoplefind/  /fixtures/clearbook/  /fixtures/spokeo/`);
-  console.error(`  MCP        /mcp  (Bearer ${TOKEN ? "required" : "off"})`);
+  console.error(`  MCP        /mcp  (Bearer ops${TOKEN ? "+demo" : DEMO_TOKEN ? " demo" : " off"})`);
   console.error(`  Health     /healthz`);
   console.error(`  CORS       ${[...CORS_ORIGINS].join(", ")}`);
 });

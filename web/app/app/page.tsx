@@ -15,6 +15,16 @@ export default function AppOverviewPage() {
         </p>
       </div>
 
+      <div className="verify-strip" style={{ marginBottom: 24 }}>
+        <span>1 · Exposure</span>
+        <span className="sep">→</span>
+        <span>2 · Brokers</span>
+        <span className="sep">→</span>
+        <span>3 · Approval</span>
+        <span className="sep">→</span>
+        <span>4 · Connect</span>
+      </div>
+
       <div className="route-cards">
         <Link className="route-card" href={`/app/exposure${q}`}>
           <strong>Exposure</strong>
@@ -37,7 +47,7 @@ export default function AppOverviewPage() {
         </Link>
         <Link className="route-card" href={`/app/connect${q}`}>
           <strong>Connect MCP</strong>
-          <span>Wire TrueForge to the live undox-tools MCP and smoke-test the harness.</span>
+          <span>One-click TrueForge connector — paste-ready, public demo Bearer.</span>
         </Link>
       </div>
     </>

@@ -1,4 +1,4 @@
-# Free Render web service — dashboard + fixtures + MCP (one Docker process).
+# Free Render web service — API + fixtures + MCP (one Docker process).
 # Session store is ephemeral on free tier; deploy/seed-sessions.json is baked into the image
 # so judges always see demo-test-2 after cold start / redeploy.
 services:
@@ -15,8 +15,11 @@ services:
         value: /data/.undox-session-state.json
       - key: UNDOX_MCP_TOKEN
         generateValue: true
+      # Public Connect-page token (intentional; mock submits only)
+      - key: UNDOX_MCP_DEMO_TOKEN
+        value: undox-demo-public
       - key: UNDOX_WEB_URL
-        value: https://undox-demo.vercel.app
+        value: https://undox.vercel.app
       - key: UNDOX_CORS_ORIGINS
-        value: https://undox-demo.vercel.app,http://localhost:3000,http://127.0.0.1:3000
+        value: https://undox.vercel.app,https://undox-demo.vercel.app,http://localhost:3000,http://127.0.0.1:3000
       # UNDOX_PUBLIC_URL: use Render-injected RENDER_EXTERNAL_URL (full https URL) at runtime

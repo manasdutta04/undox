@@ -7,6 +7,7 @@ import {
   VERCEL_APP_URL,
   withSession,
 } from "@/lib/nav";
+import { DecorBloom } from "./DecorBloom";
 
 export function SiteFooter() {
   const exposure = withSession("/app/exposure", DEFAULT_SESSION);
@@ -22,6 +23,7 @@ export function SiteFooter() {
           <Link href="/" className="brand">
             <span className="brand-mark">U</span>
             <span className="brand-word">Undox</span>
+            <DecorBloom className="bloom-inline" variant="yellow" size={28} />
           </Link>
           <p>
             Approval-gated data-broker opt-outs on TrueForge. Dashboard and MCP share one session store —

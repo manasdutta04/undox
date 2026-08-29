@@ -125,10 +125,88 @@ pre {
   background: #fff;
   box-shadow: var(--shadow);
   padding: 28px 24px;
+  position: relative;
 }
 
 .panel-accent {
   background: var(--accent);
+}
+
+.panel-session {
+  max-width: 640px;
+  overflow: hidden;
+}
+
+.panel-session > :not(.decor-bloom) {
+  position: relative;
+  z-index: 1;
+}
+
+.session-id {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.session-id code {
+  font-size: inherit;
+  background: var(--accent);
+  border: 2px solid #000;
+  padding: 4px 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Flat bloom accents */
+.decor-bloom {
+  display: block;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.bloom-corner {
+  position: absolute;
+  z-index: 0;
+  opacity: 0.95;
+}
+
+.bloom-tl {
+  top: 12px;
+  right: 14px;
+  transform: rotate(12deg);
+}
+
+.bloom-br {
+  bottom: 10px;
+  right: 72px;
+  transform: rotate(-18deg);
+}
+
+.bloom-hero-tr {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  transform: rotate(8deg);
+  z-index: 1;
+}
+
+.bloom-hero-br {
+  position: absolute;
+  bottom: 18px;
+  right: 28px;
+  transform: rotate(-14deg);
+  z-index: 1;
+}
+
+.bloom-inline {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.landing-hero .panel > :not(.decor-bloom) {
+  position: relative;
+  z-index: 1;
 }
 
 .steps {

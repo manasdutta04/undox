@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<div className="app-shell"><p className="empty">Loading…</p></div>}>
+    <Suspense fallback={<div className="app-frame"><p className="app-main empty">Loading…</p></div>}>
       <AppShell>{children}</AppShell>
     </Suspense>
   );

@@ -33,12 +33,13 @@ export function ConnectView() {
         <p className="eyebrow">TrueForge</p>
         <h1 className="page-title">Connect MCP</h1>
         <p className="page-lede">
-          Paste this connector into TrueForge as-is. No Render dashboard, no token hunting — the demo Bearer
-          is public by design (mock submits only).
+          Paste this connector into TrueForge as-is. Anyone can use it — the demo Bearer is public by design
+          (mock submits only). Live MCP currently accepts <code>{MCP_DEMO_TOKEN}</code>.
         </p>
       </div>
 
       <div className="court-card" style={{ marginBottom: 16 }}>
+        <span className="status-pill">Live · public demo auth</span>
         <h3 style={{ marginTop: 0 }}>1 · Copy MCP config</h3>
         <p className="empty" style={{ marginBottom: 12, color: "var(--text)" }}>
           TrueForge → Settings → Connectors → add <code>undox-tools</code> with this JSON:

@@ -1,48 +1,73 @@
-# Vercel deploy (Next.js UI)
+# Full-stack deploy (Vercel UI + Render API/MCP)
 
-The product UI lives in [`web/`](../web/). The API, fixtures, and MCP stay on Render.
+Undox splits hosts on purpose:
 
-## Vercel (UI)
+| Layer | Host | Role |
+|---|---|---|
+| Product UI | **Vercel** (`web/`) | Landing + `/app/*` — light theme, same-origin `/backend` proxy |
+| API · fixtures · MCP | **Render** (`scripts/serve-public.ts`) | Session store, broker HTML, HTTP MCP for TrueForge |
+
+TrueForge + Ollama stay local — they are not hosted on Vercel.
+
+## 1. Vercel (UI)
 
 1. Import repo at [vercel.com](https://vercel.com) → **Add New Project**.
 2. Set **Root Directory** to `web`.
-3. Framework preset: **Next.js** (auto-detected).
-4. Environment variable:
+3. Framework: **Next.js**.
+4. Environment:
 
-   | Name | Value |
-   |---|---|
-   | `NEXT_PUBLIC_UNDOX_API_URL` | `https://undox-demo.onrender.com` |
+   | Name | Value | Notes |
+   |---|---|---|
+   | `UNDOX_API_URL` | `https://undox-demo.onrender.com` | Used by Next rewrites (`/backend/*` → Render) |
+   | `NEXT_PUBLIC_UNDOX_API_URL` | `https://undox-demo.onrender.com` | Optional fallback / SSR |
 
-5. Deploy. Production URL (example): `https://undox-demo.vercel.app`
-6. Open app: `https://undox-demo.vercel.app/app?session=demo-test-2`
+5. Deploy → open `https://<project>.vercel.app/app?session=demo-test-2`.
+6. Connect MCP instructions: `/app/connect`.
 
-### Local dev
+Browser traffic for sessions and fixtures goes through **Vercel** (`/backend/api`, `/backend/fixtures`). MCP stays on Render’s `/mcp` (TrueForge connects there directly).
+
+### Local UI
 
 ```bash
-# Terminal 1 — API + fixtures (from repo root)
+# Terminal 1 — API + fixtures + MCP
 UNDOX_MCP_TOKEN=dev-secret npm run serve:public
 
-# Terminal 2 — Next UI
-cd web
-npm install
-NEXT_PUBLIC_UNDOX_API_URL=http://127.0.0.1:8080 npm run dev
+# Terminal 2 — Next (rewrites → Render or local)
+cd web && npm install && npm run dev
+# Point rewrites at local API:
+# UNDOX_API_URL=http://127.0.0.1:8080 npm run dev
 ```
 
-Visit `http://localhost:3000` (landing) and `http://localhost:3000/app/exposure?session=demo-test-2`.
+To bypass rewrites and call the API origin from the browser:
 
-## Render (API)
+```bash
+NEXT_PUBLIC_UNDOX_USE_DIRECT_API=1 NEXT_PUBLIC_UNDOX_API_URL=http://127.0.0.1:8080 npm run dev
+```
 
-After Vercel is live, set CORS on the Render service so the browser can call `/api/*`:
+## 2. Render (API + MCP)
+
+Blueprint: [`render.yaml`](../render.yaml). After Vercel is live:
 
 | Name | Value |
 |---|---|
 | `UNDOX_WEB_URL` | `https://undox-demo.vercel.app` |
 | `UNDOX_CORS_ORIGINS` | `https://undox-demo.vercel.app,http://localhost:3000,http://127.0.0.1:3000` |
+| `UNDOX_MCP_TOKEN` | (generated — share privately for TrueForge tests) |
 
-Redeploy Render. Verify:
+Verify:
 
 - `GET https://undox-demo.onrender.com/healthz`
-- `GET https://undox-demo.onrender.com/` → redirects to Vercel app
-- Fixtures unchanged: `/fixtures/spokeo/`, `/fixtures/peoplefind/`, `/fixtures/clearbook/`
+- `GET https://undox-demo.onrender.com/` → redirects to Vercel
+- MCP: `https://undox-demo.onrender.com/mcp` with `Authorization: Bearer <token>`
 
-See also [`deploy/RENDER_DEPLOY.md`](../deploy/RENDER_DEPLOY.md).
+See [`deploy/RENDER_DEPLOY.md`](../deploy/RENDER_DEPLOY.md).
+
+## 3. TrueForge → live MCP
+
+In the app open **Connect** (`/app/connect`) and paste the connector JSON into TrueForge, replacing `YOUR_UNDOX_MCP_TOKEN` with the Render env value.
+
+Smoke test:
+
+1. `get_exposure_dashboard` · session `demo-test-2`
+2. Match statuses on Vercel Exposure page
+3. Optional: fresh `find_*` → prepare → Allow → `submit_opt_out` (mock)

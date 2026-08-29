@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { DEFAULT_SESSION, GITHUB_REPO, withSession } from "@/lib/nav";
+import { APP_NAV, DEFAULT_SESSION, GITHUB_REPO, withSession } from "@/lib/nav";
 
 const LANDING_LINKS = [
   { href: "/app", label: "Product" },
@@ -36,7 +36,7 @@ export function SiteHeader({
               const href = withSession(item.href, sid);
               const active =
                 item.href === "/app"
-                  ? pathname === "/app" || pathname.startsWith("/app/")
+                  ? pathname.startsWith("/app")
                   : pathname.startsWith(item.href);
               return (
                 <Link
@@ -49,7 +49,25 @@ export function SiteHeader({
               );
             })}
           </nav>
-        ) : null}
+        ) : (
+          <nav className="app-nav" aria-label="App">
+            {APP_NAV.map((item) => {
+              const active =
+                item.href === "/app"
+                  ? pathname === "/app"
+                  : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={withSession(item.href, sid)}
+                  className={`app-nav-link${active ? " active" : ""}`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
 
         <div className="nav-actions">
           <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
@@ -61,7 +79,7 @@ export function SiteHeader({
             </Link>
           ) : (
             <Link href={connectHref} className="btn">
-              Connect MCP
+              Connect
             </Link>
           )}
         </div>

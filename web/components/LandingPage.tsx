@@ -5,6 +5,8 @@ import { DEFAULT_SESSION, GITHUB_REPO, withSession } from "@/lib/nav";
 export function LandingPage() {
   const appHref = withSession("/app", DEFAULT_SESSION);
   const exposureHref = withSession("/app/exposure", DEFAULT_SESSION);
+  const brokersHref = withSession("/app/brokers", DEFAULT_SESSION);
+  const approvalHref = withSession("/app/approval", DEFAULT_SESSION);
   const connectHref = withSession("/app/connect", DEFAULT_SESSION);
 
   return (
@@ -26,7 +28,7 @@ export function LandingPage() {
         </div>
       </header>
 
-      <section className="landing-section" style={{ paddingTop: 88 }}>
+      <section className="landing-section" style={{ paddingTop: 72 }}>
         <p className="eyebrow">Data broker opt-outs</p>
         <h1 className="landing-h1">
           Find exposure.
@@ -39,16 +41,25 @@ export function LandingPage() {
           Undox is a TrueForge agent that discovers people-search listings, prepares opt-out payloads in a
           sandbox, and pauses for human approval on literal PII before any submission.
         </p>
-        <div style={{ marginTop: 36, display: "flex", flexWrap: "wrap", gap: 12 }}>
-          <Link href={appHref} className="btn">
-            Open app <ArrowRight size={16} />
+        <div style={{ marginTop: 32, display: "flex", flexWrap: "wrap", gap: 12 }}>
+          <Link href={exposureHref} className="btn">
+            Open demo <ArrowRight size={16} />
+          </Link>
+          <Link href={connectHref} className="btn btn-outline">
+            Connect MCP
           </Link>
           <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" className="btn btn-outline">
             <Github size={16} /> Repository
           </a>
-          <Link href={connectHref} className="btn btn-outline">
-            Connect MCP
-          </Link>
+        </div>
+        <div className="verify-strip">
+          <span>1 · Exposure</span>
+          <span className="sep">→</span>
+          <span>2 · Brokers</span>
+          <span className="sep">→</span>
+          <span>3 · Approval</span>
+          <span className="sep">→</span>
+          <span>4 · Connect MCP</span>
         </div>
       </section>
 
@@ -73,21 +84,31 @@ export function LandingPage() {
           <article className="feature-card">
             <h3>1 · Exposure</h3>
             <p>Risk score and broker statuses from the same session store as Undox MCP — not chat prose.</p>
+            <p style={{ marginTop: 12 }}>
+              <Link href={exposureHref} className="btn btn-outline" style={{ height: 36, fontSize: 11 }}>
+                Open
+              </Link>
+            </p>
           </article>
           <article className="feature-card">
             <h3>2 · Brokers</h3>
             <p>Fixture listings for PeopleFind, Clearbook, and Spokeo — reliable demos without live CAPTCHA.</p>
+            <p style={{ marginTop: 12 }}>
+              <Link href={brokersHref} className="btn btn-outline" style={{ height: 36, fontSize: 11 }}>
+                Open
+              </Link>
+            </p>
           </article>
           <article className="feature-card">
             <h3>3 · Approval</h3>
             <p>Read-only preview of the exact PII and form fields shown before Allow on submit.</p>
+            <p style={{ marginTop: 12 }}>
+              <Link href={approvalHref} className="btn btn-outline" style={{ height: 36, fontSize: 11 }}>
+                Open
+              </Link>
+            </p>
           </article>
         </div>
-        <p style={{ marginTop: 28 }}>
-          <Link href={exposureHref} className="btn btn-outline">
-            View demo session <ArrowRight size={14} />
-          </Link>
-        </p>
       </section>
 
       <section className="landing-section">
@@ -97,11 +118,17 @@ export function LandingPage() {
         </h2>
         <p className="page-lede">
           Custom HTTP MCP (<code>undox-tools</code>): find listings, run sandbox prepare scripts, gate{" "}
-          <code>submit_opt_out</code> on human Allow, and expose session state to this dashboard.
+          <code>submit_opt_out</code> on human Allow, and expose session state to this dashboard. Paste-ready
+          connector on Connect — no Render dashboard required.
         </p>
         <pre className="code-panel">{`find_*  →  run_sandbox_prepare  →  [Human Allow]  →  submit_opt_out (mock)
                               ↘
                     get_exposure_dashboard / get_session_state`}</pre>
+        <p style={{ marginTop: 20 }}>
+          <Link href={connectHref} className="btn">
+            Copy MCP config <ArrowRight size={16} />
+          </Link>
+        </p>
       </section>
 
       <footer className="site-footer">

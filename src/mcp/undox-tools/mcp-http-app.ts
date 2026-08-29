@@ -13,16 +13,21 @@ import { createUndoxServer } from "./create-undox-server.js";
 export type UndoxMcpAppOptions = {
   /** Bind hint for createMcpExpressApp host checks */
   host: string;
+  /** Primary ops token (UNDOX_MCP_TOKEN). Empty = no auth required for this slot. */
   token: string;
+  /** Additional accepted tokens (e.g. public demo token). */
+  extraTokens?: string[];
   allowedHosts?: string[];
 };
 
-function tokenOk(token: string, provided: string | undefined): boolean {
-  if (!token) return true;
+function tokenMatches(accepted: string[], provided: string | undefined): boolean {
+  if (!accepted.length) return true;
   if (!provided) return false;
   const a = Buffer.from(provided);
-  const b = Buffer.from(token);
-  return a.length === b.length && timingSafeEqual(a, b);
+  return accepted.some((token) => {
+    const b = Buffer.from(token);
+    return a.length === b.length && timingSafeEqual(a, b);
+  });
 }
 
 function extractBearer(header: string | undefined): string | undefined {
@@ -33,7 +38,8 @@ function extractBearer(header: string | undefined): string | undefined {
 
 /** Build Express app with /mcp routes (auth + streamable HTTP). Does not listen. */
 export function createUndoxMcpApp(opts: UndoxMcpAppOptions): Express {
-  const { host, token, allowedHosts } = opts;
+  const { host, token, extraTokens = [], allowedHosts } = opts;
+  const accepted = [token, ...extraTokens].map((t) => t.trim()).filter(Boolean);
   const isLoopback =
     host === "127.0.0.1" || host === "::1" || host === "localhost";
 
@@ -49,7 +55,7 @@ export function createUndoxMcpApp(opts: UndoxMcpAppOptions): Express {
   const transports: Record<string, StreamableHTTPServerTransport> = {};
 
   function requireMcpAuth(req: Request, res: Response, next: NextFunction): void {
-    if (!token) {
+    if (!accepted.length) {
       next();
       return;
     }
@@ -57,7 +63,7 @@ export function createUndoxMcpApp(opts: UndoxMcpAppOptions): Express {
       extractBearer(req.header("authorization") ?? undefined) ??
       req.header("x-undox-mcp-token") ??
       undefined;
-    if (!tokenOk(token, provided)) {
+    if (!tokenMatches(accepted, provided)) {
       res.status(401).json({
         jsonrpc: "2.0",
         error: { code: -32001, message: "Unauthorized" },

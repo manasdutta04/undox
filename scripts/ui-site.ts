@@ -26,6 +26,7 @@ export function decodeSessionId(raw: string): string | null {
 /** Default CORS origins for Vercel UI + local Next dev. */
 export function defaultCorsOrigins(): string[] {
   return [
+    "https://undox.vercel.app",
     "https://undox-demo.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",

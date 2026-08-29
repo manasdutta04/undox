@@ -13,13 +13,14 @@ import { createUndoxMcpApp } from "./mcp-http-app.js";
 const PORT = Number(process.env.UNDOX_MCP_PORT ?? 8791);
 const HOST = process.env.UNDOX_MCP_HOST ?? "127.0.0.1";
 const TOKEN = process.env.UNDOX_MCP_TOKEN?.trim() || "";
+const DEMO_TOKEN = process.env.UNDOX_MCP_DEMO_TOKEN?.trim() || "";
 
 const isLoopback =
   HOST === "127.0.0.1" || HOST === "::1" || HOST === "localhost";
 
-if (!isLoopback && !TOKEN) {
+if (!isLoopback && !TOKEN && !DEMO_TOKEN) {
   console.error(
-    "Refusing to bind MCP on a non-loopback host without UNDOX_MCP_TOKEN. " +
+    "Refusing to bind MCP on a non-loopback host without UNDOX_MCP_TOKEN or UNDOX_MCP_DEMO_TOKEN. " +
       "Set a shared secret, or use UNDOX_MCP_HOST=127.0.0.1 for local-only demos.",
   );
   process.exit(1);
@@ -32,6 +33,7 @@ const explicitAllowedHosts = process.env.UNDOX_MCP_ALLOWED_HOSTS?.split(",")
 const app = createUndoxMcpApp({
   host: HOST,
   token: TOKEN,
+  extraTokens: DEMO_TOKEN && DEMO_TOKEN !== TOKEN ? [DEMO_TOKEN] : [],
   ...(explicitAllowedHosts?.length ? { allowedHosts: explicitAllowedHosts } : {}),
 });
 

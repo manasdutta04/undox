@@ -1,11 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { API_PUBLIC_URL, MCP_URL, trueforgeMcpSnippet } from "@/lib/nav";
+import Link from "next/link";
+import {
+  API_PUBLIC_URL,
+  DEFAULT_SESSION,
+  MCP_DEMO_TOKEN,
+  MCP_URL,
+  VERCEL_APP_URL,
+  trueforgeMcpSnippet,
+  withSession,
+} from "@/lib/nav";
 
 export function ConnectView() {
   const [copied, setCopied] = useState(false);
   const snippet = trueforgeMcpSnippet();
+  const exposureHref = withSession("/app/exposure", DEFAULT_SESSION);
 
   async function copy() {
     try {
@@ -23,78 +33,76 @@ export function ConnectView() {
         <p className="eyebrow">TrueForge</p>
         <h1 className="page-title">Connect MCP</h1>
         <p className="page-lede">
-          Point TrueForge at the live Undox MCP so you can run find → prepare → approve → submit against the
-          same session store this app reads.
+          Paste this connector into TrueForge as-is. No Render dashboard, no token hunting — the demo Bearer
+          is public by design (mock submits only).
         </p>
       </div>
 
       <div className="court-card" style={{ marginBottom: 16 }}>
-        <h3 style={{ marginTop: 0 }}>Live endpoints</h3>
-        <dl className="kv">
-          <dt>MCP</dt>
-          <dd>{MCP_URL}</dd>
-          <dt>API / fixtures / health</dt>
-          <dd>{API_PUBLIC_URL}</dd>
-          <dt>Auth</dt>
-          <dd>Authorization: Bearer &lt;UNDOX_MCP_TOKEN&gt;</dd>
-        </dl>
-      </div>
-
-      <div className="court-card" style={{ marginBottom: 16 }}>
-        <h3 style={{ marginTop: 0 }}>1 · Get a token</h3>
+        <h3 style={{ marginTop: 0 }}>1 · Copy MCP config</h3>
         <p className="empty" style={{ marginBottom: 12, color: "var(--text)" }}>
-          On Render → undox-demo → Environment, copy <code>UNDOX_MCP_TOKEN</code>. Do not commit it. For local
-          runs use any secret with <code>UNDOX_MCP_TOKEN=… npm run serve:public</code>.
+          TrueForge → Settings → Connectors → add <code>undox-tools</code> with this JSON:
         </p>
-      </div>
-
-      <div className="court-card" style={{ marginBottom: 16 }}>
-        <h3 style={{ marginTop: 0 }}>2 · Add MCP connector in TrueForge</h3>
-        <p className="empty" style={{ marginBottom: 12, color: "var(--text)" }}>
-          Create connector <code>undox-tools</code> (or <code>undox-tool</code>) with header auth. Replace the
-          placeholder token:
-        </p>
-        <pre className="code-panel" style={{ marginTop: 0, boxShadow: "none" }}>
+        <pre className="code-panel" style={{ marginTop: 0 }}>
           {snippet}
         </pre>
         <div className="card-actions">
           <button type="button" className="btn" onClick={copy}>
-            {copied ? "Copied" : "Copy JSON"}
+            {copied ? "Copied" : "Copy MCP config"}
           </button>
         </div>
+        <dl className="kv" style={{ marginTop: 16 }}>
+          <dt>MCP URL</dt>
+          <dd>{MCP_URL}</dd>
+          <dt>Demo Bearer</dt>
+          <dd>{MCP_DEMO_TOKEN}</dd>
+          <dt>API / fixtures</dt>
+          <dd>{API_PUBLIC_URL}</dd>
+        </dl>
       </div>
 
       <div className="court-card" style={{ marginBottom: 16 }}>
-        <h3 style={{ marginTop: 0 }}>3 · Smoke-test tools</h3>
-        <ol style={{ margin: 0, paddingLeft: "1.25rem", lineHeight: 1.7, fontSize: 14, color: "var(--text)" }}>
+        <h3 style={{ marginTop: 0 }}>2 · Verify</h3>
+        <ol className="checklist">
           <li>
-            Call <code>get_exposure_dashboard</code> with session <code>demo-test-2</code> — expect risk high +
-            three submitted brokers.
+            Call <code>get_exposure_dashboard</code> with session <code>{DEFAULT_SESSION}</code> — expect risk
+            high and three submitted brokers.
           </li>
           <li>
-            Open this app&apos;s Exposure page for the same session — statuses must match tool JSON.
+            Open{" "}
+            <Link href={exposureHref} style={{ textDecoration: "underline" }}>
+              Exposure
+            </Link>{" "}
+            for the same session — statuses must match tool JSON.
           </li>
           <li>
-            For a fresh run: <code>find_*</code> → <code>run_sandbox_prepare</code> → Allow on literal PII →{" "}
+            Optional fresh run: <code>find_*</code> → <code>run_sandbox_prepare</code> → Allow on literal PII →{" "}
             <code>submit_opt_out</code> (mode=mock).
           </li>
         </ol>
+        <div className="card-actions">
+          <Link className="btn btn-outline" href={exposureHref}>
+            Open Exposure
+          </Link>
+          <a className="btn btn-outline" href={VERCEL_APP_URL} target="_blank" rel="noopener noreferrer">
+            Live site
+          </a>
+        </div>
       </div>
 
-      <div className="court-card">
-        <h3 style={{ marginTop: 0 }}>Local alternative</h3>
-        <pre className="code-panel" style={{ marginTop: 0, boxShadow: "none" }}>
+      <details className="court-card">
+        <summary style={{ cursor: "pointer", fontWeight: 800, textTransform: "uppercase", fontSize: 14 }}>
+          Local clone (developers)
+        </summary>
+        <pre className="code-panel" style={{ marginTop: 12, boxShadow: "none" }}>
 {`# API + fixtures + MCP
-UNDOX_MCP_TOKEN=dev-secret npm run serve:public
+UNDOX_MCP_TOKEN=dev-secret UNDOX_MCP_DEMO_TOKEN=undox-demo-public npm run serve:public
 
 # UI (rewrites /backend → local API)
 cd web
-UNDOX_API_URL=http://127.0.0.1:8080 npm run dev
-
-# Or hit the API directly from the browser:
-# NEXT_PUBLIC_UNDOX_USE_DIRECT_API=1 NEXT_PUBLIC_UNDOX_API_URL=http://127.0.0.1:8080 npm run dev`}
+UNDOX_API_URL=http://127.0.0.1:8080 npm run dev`}
         </pre>
-      </div>
+      </details>
     </>
   );
 }

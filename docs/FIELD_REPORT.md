@@ -3,7 +3,7 @@
 **Hackathon:** WeMakeDevs × TrueFoundry × Qodo (Agent Harness)  
 **Track focus:** Best Use of TrueForge (Double-O / NVIDIA DGX Spark). Secondary: Qodo code-quality trail (Q Branch / Mac Mini). UI is evidence of state, not the product.
 
-**Live demo:** https://undox-demo.vercel.app/app?session=demo-test-2  
+**Live demo:** https://undox.vercel.app/app?session=demo-test-2  
 (Vercel UI + Render API/fixtures/MCP; Render free tier may sleep — first API load ~1 min)
 
 ## Problem

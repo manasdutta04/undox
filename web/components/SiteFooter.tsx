@@ -77,11 +77,13 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="site-footer-bar">
-        <span>Undox · mock submits · fixture identity only</span>
-        <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer">
-          manasdutta04/undox
-        </a>
+      <div className="site-footer-bar-wrap">
+        <div className="site-footer-bar">
+          <span>Undox · mock submits · fixture identity only</span>
+          <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer">
+            manasdutta04/undox
+          </a>
+        </div>
       </div>
     </footer>
   );

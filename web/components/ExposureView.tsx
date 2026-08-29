@@ -170,7 +170,7 @@ export function ExposureView() {
             </ul>
           </div>
 
-          <details className="panel">
+          <details className="panel-details">
             <summary>Event log</summary>
             <ol>
               {data.timeline.map((e, i) => (

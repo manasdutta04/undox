@@ -8,52 +8,43 @@
 TrueForge agent that finds data-broker sites leaking a person's PII and drives
 opt-outs — with **human approval before every submission**.
 
-## Live demo (no clone required)
-
-| What | URL |
+| | |
 |---|---|
-| **App** (start here) | https://undox.vercel.app/app?session=demo-test-2 |
+| **Live demo** | https://undox.vercel.app/app?session=demo-test-2 |
+| **Connect MCP** | https://undox.vercel.app/app/connect — copy JSON as-is (`undox-demo-public`) |
 | Landing | https://undox.vercel.app/ |
-| **Connect MCP** (TrueForge) | https://undox.vercel.app/app/connect |
-| API · fixtures · MCP | https://undox-demo.onrender.com |
-| Fixtures | https://undox-demo.onrender.com/fixtures/peoplefind/ · [/clearbook/](https://undox-demo.onrender.com/fixtures/clearbook/) · [/spokeo/](https://undox-demo.onrender.com/fixtures/spokeo/) |
-| Health | https://undox-demo.onrender.com/healthz |
-| MCP (Bearer) | `https://undox-demo.onrender.com/mcp` — demo token `undox-demo-public` (paste-ready on Connect) |
+| API · fixtures · MCP | https://undox-demo.onrender.com · [`/mcp`](https://undox-demo.onrender.com/mcp) · [`/healthz`](https://undox-demo.onrender.com/healthz) |
 
-> **Render free tier:** the API sleeps after ~15 min idle; **first load may take up to ~1 minute**. Optional keep-warm: ping `/healthz` every 10 min with [UptimeRobot](https://uptimerobot.com) (free). See [`docs/WEB_DEPLOY.md`](./docs/WEB_DEPLOY.md).
+Proof path: **Exposure → Brokers → Approval → Connect**. Source of truth = tool JSON + dashboard, not chat.
 
-**MCP for TrueForge:** open [Connect](https://undox.vercel.app/app/connect) and **Copy MCP config** — includes the public demo Bearer (`undox-demo-public`). Submits stay mock; rotate/remove the demo token after the hackathon. Ops may also set a private `UNDOX_MCP_TOKEN` (not needed for judges).
+Docs: [`FIELD_REPORT`](./docs/FIELD_REPORT.md) · [`WEB_DEPLOY`](./docs/WEB_DEPLOY.md) · [`CONTRIBUTING`](./CONTRIBUTING.md)
 
-**Approval gate + kill/resume** are demonstrated in the project video (TrueForge Allow on literal PII). Hosting TrueForge + Ollama publicly is out of scope for the free demo stack.
+### Ops notes
 
-> Field report: [`docs/FIELD_REPORT.md`](./docs/FIELD_REPORT.md) · Web deploy: [`docs/WEB_DEPLOY.md`](./docs/WEB_DEPLOY.md) · Shipping process: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
-
-**Status:** Double-O harness demo — multi-broker MCP (Spokeo + 2 fixtures), sandbox prepare scripts, `dynamicSubAgents` + parallel tool fan-out, approval gate, session resume, Exposure Dashboard. **Source of truth = tool JSON + dashboard, not chat prose.**
+- **Cold start:** Render free tier sleeps after ~15 min idle; first API load may take ~1 minute. Optional keep-warm: ping `/healthz` every 10 min ([UptimeRobot](https://uptimerobot.com)).
+- **MCP:** public demo Bearer `undox-demo-public` (mock submits). Optional private `UNDOX_MCP_TOKEN` for ops. Rotate after the hackathon.
+- **Video:** Approval gate + kill/resume shown in the project video (TrueForge Allow on literal PII). Hosting TrueForge + Ollama publicly is out of scope.
 
 ## How Undox uses TrueForge
 
 | Primitive | Undox wiring |
 |---|---|
 | **MCP tools** | Custom `undox-tools` HTTP MCP: find → `run_sandbox_prepare` → approval-gated `submit_opt_out`; plus `get_session_state` / `get_exposure_dashboard` |
-| **Sandbox + skills** | Skills `spokeo`, `peoplefind`, `clearbook`, `exposure-score`; prepare scripts under `src/sandbox/` (`prepare_runtime: sandbox-script`) |
+| **Sandbox + skills** | Skills `spokeo`, `peoplefind`, `clearbook`, `exposure-score`; prepare scripts under `src/sandbox/` |
 | **Approval** | `submit_opt_out` and `run_spokeo_opt_out` require human Allow on **literal** PII |
-| **Subagents** | `config.dynamicSubAgents.enabled`; worker instruction contracts in `src/agents/*-subagent.ts`. Fallback = parallel MCP tool fan-out |
-| **Sessions** | File store keyed by `session_id` — kill TrueForge, keep MCP, statuses remain |
-| **Status UI** | Next.js app on Vercel (`web/`) + `/api/session/:id` on Render; same session store as MCP |
+| **Subagents** | `config.dynamicSubAgents.enabled`; fallback = parallel MCP tool fan-out |
+| **Sessions** | File store keyed by `session_id` — survives TrueForge restart |
+| **Status UI** | Next.js on Vercel (`web/`) + session API on Render — same store as MCP |
 
-### Architecture (short)
-
-**Vercel** serves the landing page and `/app/*` workspace (neo-brutal UI; `/backend/*` proxies session API + fixtures). **Render** (`scripts/serve-public.ts`) serves `/api/*`, `/fixtures/*`, and `/mcp`. TrueForge (local) talks to MCP over HTTP — paste the connector from **Connect** (`undox-demo-public`). Prepare runs sandbox scripts; submit is mock on stage. The dashboard reads the same JSON session store — chat is not authoritative.
+**Stack:** Vercel UI (`web/`, neo-brutal) proxies `/backend/*` to Render. Render serves `/api/*`, `/fixtures/*`, `/mcp`. TrueForge (local) uses the Connect paste. Submit is mock on stage.
 
 ## Brokers
 
 | Broker | Role |
 |---|---|
-| **Spokeo** | Real opt-out URL mapping; CAPTCHA escalates to human; submit is **mock** in demo |
+| **Spokeo** | Real opt-out URL mapping; CAPTCHA escalates to human; submit **mock** in demo |
 | **PeopleFind** | Fixture under `fixtures/demo-brokers/peoplefind` |
 | **Clearbook** | Fixture under `fixtures/demo-brokers/clearbook` |
-
-CAPTCHA is flagged to the human (never bypassed). Live POSTs stay off unless you explicitly opt in later — demos use `mode=mock`.
 
 ## Free stack (no paid keys)
 
@@ -64,12 +55,12 @@ CAPTCHA is flagged to the human (never bypassed). Live POSTs stay off unless you
 | Product UI | **[Vercel](https://vercel.com)** (`web/`) | Next.js 15 |
 | Public API host | **[Render](https://render.com)** free web service | Blueprint in `render.yaml` |
 | Broker search | Fixtures via Undox MCP | Reliable on stage |
-| Opt-out submit | **Mock** | Live POST intentionally disabled for demo |
+| Opt-out submit | **Mock** | Live POST disabled for demo |
 | Code review | **[Qodo](https://github.com/marketplace/qodo-merge-pro)** | Best Code Quality eligibility |
 
 ## Local fallback (clone path)
 
-Needs Node **≥ 22.14**, Ollama with a tool-calling model, and TrueForge in **WSL2** on Windows (native Windows TrueForge v0.1.4 crashes on `c:` protocol).
+Needs Node **≥ 22.14**, Ollama with a tool-calling model, and TrueForge in **WSL2** on Windows.
 
 ```bash
 cp .env.example .env
@@ -85,23 +76,15 @@ UNDOX_MCP_TOKEN=dev-secret UNDOX_MCP_DEMO_TOKEN=undox-demo-public npm run serve:
 # Next UI (separate terminal)
 cd web && npm install
 NEXT_PUBLIC_UNDOX_API_URL=http://127.0.0.1:8080 npm run dev   # :3000
-
-# Or API-only local helper:
-npm run dashboard:serve         # :8793 (API only)
-UNDOX_MCP_HOST=0.0.0.0 UNDOX_MCP_TOKEN=dev-secret npm run mcp:undox-tools:http
 ```
 
-Connect TrueForge MCP connector `undox-tool` → `http://<host>:8791/mcp` (or `:8080/mcp`) with `auth.type: "header"` and `Authorization: Bearer <token>`. Helper: `scripts/fix-trueforge-mcp-auth.ts`.
+Connect TrueForge → paste from `/app/connect` (or local `:8080/mcp` with your Bearer). Register: `UNDOX_ATTACH_SKILLS=true UNDOX_MODEL=ollama/gemma4-e2b npm run register:agent`
 
-Register: `UNDOX_ATTACH_SKILLS=true UNDOX_MODEL=ollama/gemma4-e2b npm run register:agent`
-
-Demo prompt (Agents Library → undox-orchestrator):
+Demo prompt:
 
 ```
 Session id demo-double-o-1. Remove Alex Rivera's PII (demo): name Alex Rivera, address 123 Maple Ave Austin TX 78701, phone +1-512-555-0142, dob 1990-04-12, email alex.rivera.optout@example.com. Use mode=mock.
 ```
-
-Trust dashboard / tool JSON over chat. Resume: `Resume session demo-double-o-1 — call get_session_state and get_exposure_dashboard.`
 
 ### Offline (no LLM)
 
@@ -113,16 +96,8 @@ npm run demo:multi-broker
 
 ### Deploy your own
 
-**UI (Vercel):** root directory `web`, set `NEXT_PUBLIC_UNDOX_API_URL` — see [`docs/WEB_DEPLOY.md`](./docs/WEB_DEPLOY.md).
-
-**API (Render — free):**
-
-1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → connect this repo.
-2. Render reads [`render.yaml`](render.yaml), creates `undox-demo`, builds Docker, deploys.
-3. Confirm `UNDOX_WEB_URL=https://undox.vercel.app` and `UNDOX_MCP_DEMO_TOKEN=undox-demo-public`.
-4. Open `https://undox.vercel.app/app?session=demo-test-2` and `/app/connect` for MCP.
-
-Optional backup: [`Dockerfile`](Dockerfile) + [`fly.toml`](fly.toml) for Fly.io.
+**UI:** Vercel root `web` — [`docs/WEB_DEPLOY.md`](./docs/WEB_DEPLOY.md).  
+**API:** Render Blueprint from [`render.yaml`](render.yaml); set `UNDOX_WEB_URL` + `UNDOX_MCP_DEMO_TOKEN=undox-demo-public`.
 
 ## Safety
 
@@ -133,18 +108,15 @@ Optional backup: [`Dockerfile`](Dockerfile) + [`fly.toml`](fly.toml) for Fly.io.
 
 ## Qodo Code Review Evidence
 
-- **Primary PR:** https://github.com/manasdutta04/undox/pull/4  
-  (`feat: Double-O deepen — multi-broker, sandbox, subagents, resume, UI`)  
-  Qodo High/Medium findings resolved before squash merge.
-- **Render deploy:** https://github.com/manasdutta04/undox/pull/8 — Blueprint + public URL fixes; Qodo resolved before merge.
-- **Earlier:** https://github.com/manasdutta04/undox/pull/3 — HTTP MCP + Ollama path; High/Medium fixed.
-- **Earlier:** https://github.com/manasdutta04/undox/pull/1 — Medium env-load bug; resolved.
-- Process: `/agentic_review` on every substantive PR → fix → re-review → squash merge. No direct pushes to `main`.
-- CI: `.github/workflows/ci.yml` runs `typecheck`, `test`, and `prove:heart` on every PR.
+- **Primary PR:** https://github.com/manasdutta04/undox/pull/4 — Double-O deepen; Qodo High/Medium resolved.
+- **Render deploy:** https://github.com/manasdutta04/undox/pull/8 — Blueprint + public URL; Qodo resolved.
+- **Earlier:** [#3](https://github.com/manasdutta04/undox/pull/3), [#1](https://github.com/manasdutta04/undox/pull/1).
+- Process: `/agentic_review` on every substantive PR → fix → squash merge. No direct pushes to `main`.
+- CI: `typecheck`, `test`, `prove:heart` on every PR.
 
 ## Field write-up
 
-See [`docs/FIELD_REPORT.md`](./docs/FIELD_REPORT.md) — problem, TrueForge primitives, demo proof, safety, Qodo/CI.
+See [`docs/FIELD_REPORT.md`](./docs/FIELD_REPORT.md).
 
 ## AI assistance disclosure
 

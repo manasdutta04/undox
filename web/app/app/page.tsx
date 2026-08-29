@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DEFAULT_SESSION, withSession } from "@/lib/nav";
+import { DEFAULT_SESSION } from "@/lib/nav";
 
 export default function AppOverviewPage() {
   const q = `?session=${encodeURIComponent(DEFAULT_SESSION)}`;
@@ -27,6 +27,17 @@ export default function AppOverviewPage() {
         <Link className="route-card" href={`/app/approval${q}`}>
           <strong>Approval</strong>
           <span>Read-only mirror of literal PII and form fields before Allow on submit.</span>
+        </Link>
+      </div>
+
+      <div className="route-cards" style={{ marginTop: 14, gridTemplateColumns: "1fr 1fr" }}>
+        <Link className="route-card" href={`/app/architecture${q}`}>
+          <strong>Architecture</strong>
+          <span>TrueForge primitives — MCP flow, sandbox skills, approval gate.</span>
+        </Link>
+        <Link className="route-card" href={`/app/connect${q}`}>
+          <strong>Connect MCP</strong>
+          <span>Wire TrueForge to the live undox-tools MCP and smoke-test the harness.</span>
         </Link>
       </div>
     </>

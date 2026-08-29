@@ -45,7 +45,7 @@ export function SessionBar({ onReload }: { onReload: () => void }) {
     if (!id) return;
     router.push(`${pathname}?session=${encodeURIComponent(id)}`);
     onReload();
-  }, [value, router, onReload]);
+  }, [value, router, pathname, onReload]);
 
   return (
     <div className="session-bar">

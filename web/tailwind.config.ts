@@ -5,8 +5,12 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-ibm-plex)", "ui-monospace", "monospace"],
+      },
+      colors: {
+        ink: "#0a0a0a",
+        paper: "#f6f5f1",
       },
     },
   },

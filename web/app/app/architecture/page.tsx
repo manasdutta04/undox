@@ -3,6 +3,7 @@ import { DEFAULT_SESSION, GITHUB_REPO, withSession } from "@/lib/nav";
 
 export default function ArchitecturePage() {
   const exposureHref = withSession("/app/exposure", DEFAULT_SESSION);
+  const connectHref = withSession("/app/connect", DEFAULT_SESSION);
 
   return (
     <>
@@ -12,8 +13,8 @@ export default function ArchitecturePage() {
         <p className="page-lede">How Undox uses TrueForge primitives — MCP tools, sandbox, and approval gate.</p>
       </div>
 
-      <div className="court-card">
-        <h3>MCP flow (undox-tools)</h3>
+      <div className="court-card" style={{ marginBottom: 16 }}>
+        <h3 style={{ marginTop: 0 }}>MCP flow (undox-tools)</h3>
         <ol style={{ margin: 0, paddingLeft: "1.25rem", lineHeight: 1.8, fontSize: 14 }}>
           <li>
             <code>find_*</code> — discover broker listings (fixtures on stage)
@@ -72,6 +73,9 @@ export default function ArchitecturePage() {
       <div className="card-actions" style={{ marginTop: 24 }}>
         <Link className="btn" href={exposureHref}>
           Open demo session
+        </Link>
+        <Link className="btn btn-outline" href={connectHref}>
+          Connect MCP
         </Link>
         <a className="btn btn-outline" href={GITHUB_REPO} target="_blank" rel="noopener noreferrer">
           Repository

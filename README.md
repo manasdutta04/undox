@@ -14,6 +14,7 @@ opt-outs — with **human approval before every submission**.
 |---|---|
 | **App** (start here) | https://undox-demo.vercel.app/app?session=demo-test-2 |
 | Landing | https://undox-demo.vercel.app/ |
+| **Connect MCP** (TrueForge) | https://undox-demo.vercel.app/app/connect |
 | API · fixtures · MCP | https://undox-demo.onrender.com |
 | Fixtures | https://undox-demo.onrender.com/fixtures/peoplefind/ · [/clearbook/](https://undox-demo.onrender.com/fixtures/clearbook/) · [/spokeo/](https://undox-demo.onrender.com/fixtures/spokeo/) |
 | Health | https://undox-demo.onrender.com/healthz |
@@ -42,7 +43,7 @@ MCP requires a Bearer token (`UNDOX_MCP_TOKEN`). Dashboard/fixture verification 
 
 ### Architecture (short)
 
-**Vercel** serves the landing page and `/app/*` workspace. **Render** (`scripts/serve-public.ts`) serves `/api/*`, `/fixtures/*`, and `/mcp`. TrueForge (local) talks to MCP over HTTP with Bearer auth. Prepare runs sandbox scripts; submit is mock on stage. The dashboard reads the same JSON session store — chat is not authoritative.
+**Vercel** serves the landing page and `/app/*` workspace (light UI; `/backend/*` proxies session API + fixtures). **Render** (`scripts/serve-public.ts`) serves `/api/*`, `/fixtures/*`, and `/mcp`. TrueForge (local) talks to MCP over HTTP with Bearer auth — use in-app **Connect** for the connector JSON. Prepare runs sandbox scripts; submit is mock on stage. The dashboard reads the same JSON session store — chat is not authoritative.
 
 ## Brokers
 

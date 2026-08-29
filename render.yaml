@@ -15,4 +15,8 @@ services:
         value: /data/.undox-session-state.json
       - key: UNDOX_MCP_TOKEN
         generateValue: true
+      - key: UNDOX_WEB_URL
+        value: https://undox-demo.vercel.app
+      - key: UNDOX_CORS_ORIGINS
+        value: https://undox-demo.vercel.app,http://localhost:3000,http://127.0.0.1:3000
       # UNDOX_PUBLIC_URL: use Render-injected RENDER_EXTERNAL_URL (full https URL) at runtime

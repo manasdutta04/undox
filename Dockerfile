@@ -1,4 +1,4 @@
-# Undox public demo — dashboard + fixtures + MCP in one process
+# Undox public demo — API + fixtures + MCP in one process (UI on Vercel web/)
 FROM node:22-bookworm-slim
 
 WORKDIR /app

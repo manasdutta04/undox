@@ -3,7 +3,7 @@ import { ArrowRight, Github } from "lucide-react";
 import { DEFAULT_SESSION, GITHUB_REPO, withSession } from "@/lib/nav";
 import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
-import { DecorBloom } from "./DecorBloom";
+import { DecorMotif } from "./DecorBloom";
 
 export function LandingPage() {
   const exposureHref = withSession("/app/exposure", DEFAULT_SESSION);
@@ -17,12 +17,9 @@ export function LandingPage() {
 
       <section className="landing-section landing-hero">
         <div className="panel">
-          <DecorBloom className="bloom-hero-tr" variant="yellow" size={64} />
-          <DecorBloom className="bloom-hero-br" variant="green" size={40} />
-          <div className="stamp-row">
-            <span className="stamp">Mock · Demo</span>
-            <span className="stamp stamp-alt">Human Allow</span>
-          </div>
+          <DecorMotif className="bloom-hero-tr" kind="bloom" variant="yellow" size={64} />
+          <DecorMotif className="bloom-hero-br" kind="star" variant="green" size={40} />
+          <DecorMotif className="motif-hero-ml" kind="spark" variant="yellow" size={32} />
           <p className="eyebrow">Data broker opt-outs</p>
           <h1 className="landing-h1">
             Find exposure.
@@ -60,7 +57,16 @@ export function LandingPage() {
 
       <div className="band-hatch" aria-hidden="true" />
 
-      <section className="landing-section">
+      <div className="motif-scatter" aria-hidden="true">
+        <DecorMotif kind="leaf" variant="green" size={36} />
+        <DecorMotif kind="bloom" variant="yellow" size={44} />
+        <DecorMotif kind="spark" variant="green" size={28} />
+        <DecorMotif kind="star" variant="yellow" size={34} />
+        <DecorMotif kind="bloom" variant="green" size={30} />
+      </div>
+
+      <section className="landing-section landing-section-decor">
+        <DecorMotif className="motif-float motif-float-tr" kind="leaf" variant="green" size={48} />
         <p className="eyebrow">Problem</p>
         <h2 className="page-title page-title-md">Brokers republish your PII</h2>
         <div className="problem-grid">
@@ -89,11 +95,13 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="landing-section">
+      <section className="landing-section landing-section-decor">
+        <DecorMotif className="motif-float motif-float-tr" kind="star" variant="yellow" size={42} />
         <p className="eyebrow">Product</p>
         <h2 className="page-title page-title-md">Find → prepare → approve → submit</h2>
         <div className="feature-grid">
-          <article className="feature-card">
+          <article className="feature-card feature-card-decor">
+            <DecorMotif className="motif-card" kind="bloom" variant="yellow" size={28} />
             <div className="feature-num">01</div>
             <h3>Exposure</h3>
             <p>Risk score and broker statuses from the same session store as Undox MCP — not chat prose.</p>
@@ -103,7 +111,8 @@ export function LandingPage() {
               </Link>
             </p>
           </article>
-          <article className="feature-card">
+          <article className="feature-card feature-card-decor">
+            <DecorMotif className="motif-card" kind="leaf" variant="green" size={28} />
             <div className="feature-num">02</div>
             <h3>Brokers</h3>
             <p>Fixture listings for PeopleFind, Clearbook, and Spokeo — reliable demos without live CAPTCHA.</p>
@@ -113,7 +122,8 @@ export function LandingPage() {
               </Link>
             </p>
           </article>
-          <article className="feature-card">
+          <article className="feature-card feature-card-decor">
+            <DecorMotif className="motif-card" kind="spark" variant="yellow" size={28} />
             <div className="feature-num">03</div>
             <h3>Approval</h3>
             <p>Read-only preview of the exact PII and form fields shown before Allow on submit.</p>
@@ -170,6 +180,8 @@ export function LandingPage() {
 
       <section className="cta-band">
         <div className="cta-band-inner">
+          <DecorMotif className="motif-cta-l" kind="bloom" variant="cream" size={52} />
+          <DecorMotif className="motif-cta-r" kind="star" variant="cream" size={40} />
           <div>
             <h2>Ready to verify</h2>
             <p>Open the seeded demo session, then paste the MCP connector into TrueForge.</p>

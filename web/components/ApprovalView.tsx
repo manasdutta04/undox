@@ -20,6 +20,8 @@ export function ApprovalView() {
 
   useEffect(() => {
     let cancelled = false;
+    setData(null);
+    setError("");
     (async () => {
       try {
         const d = await getSessionDetail(sessionId);
@@ -27,7 +29,10 @@ export function ApprovalView() {
         setData(d);
         setError("");
       } catch {
-        if (!cancelled) setError("Could not load session detail.");
+        if (!cancelled) {
+          setData(null);
+          setError("Could not load session detail.");
+        }
       }
     })();
     return () => {

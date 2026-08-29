@@ -21,11 +21,26 @@ function statusBadge(status: ListingStatus) {
 }
 
 function pipeline(status: ListingStatus) {
-  const idx = STEPS.indexOf(status);
+  if (status === "removed" || status === "rejected") {
+    return STEPS.map((s) => (
+      <span key={s} className="done">
+        {s.replace(/_/g, " ")}
+      </span>
+    ));
+  }
+
+  const effective: ListingStatus =
+    status === "pending_confirmation"
+      ? "submitted"
+      : STEPS.includes(status)
+        ? status
+        : "found";
+  const idx = STEPS.indexOf(effective);
+
   return STEPS.map((s, i) => {
     let cls = "";
-    if (status === "submitted") {
-      cls = i <= STEPS.indexOf("submitted") ? (s === "submitted" ? "current" : "done") : "";
+    if (effective === "submitted" || status === "pending_confirmation") {
+      cls = i <= idx ? (s === "submitted" ? "current" : "done") : "";
     } else if (i < idx) cls = "done";
     else if (i === idx) cls = "current";
     return (
@@ -48,6 +63,8 @@ export function BrokersView() {
 
   useEffect(() => {
     let cancelled = false;
+    setDetail(null);
+    setError("");
     (async () => {
       try {
         const d = await getSessionDetail(sessionId);
@@ -58,7 +75,10 @@ export function BrokersView() {
           setActive(d.brokers[0]?.broker ?? "spokeo");
         }
       } catch {
-        if (!cancelled) setError("Could not load session detail.");
+        if (!cancelled) {
+          setDetail(null);
+          setError("Could not load session detail.");
+        }
       }
     })();
     return () => {

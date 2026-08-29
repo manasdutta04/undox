@@ -83,6 +83,8 @@ export function ExposureView() {
   useEffect(() => {
     let cancelled = false;
     let seq = 0;
+    setData(null);
+    setError("");
 
     async function fetchData() {
       const mySeq = ++seq;
@@ -93,7 +95,10 @@ export function ExposureView() {
           setError("");
         }
       } catch {
-        if (!cancelled && mySeq === seq) setError("Could not load session.");
+        if (!cancelled && mySeq === seq) {
+          setData(null);
+          setError("Could not load session.");
+        }
       }
     }
 
